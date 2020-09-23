@@ -1,39 +1,39 @@
 mod asset;
+mod buffers;
 mod camera;
 mod game;
 mod instance;
+mod memory;
 mod renderer;
 mod time;
 
 extern crate ash;
 extern crate winit;
-use ash::{util::*, vk};
+use ash::vk;
 
 use ash::extensions::{
     ext::DebugUtils,
     khr::{Surface, Swapchain},
 };
 
-use crate::renderer::Renderer;
+use crate::{memory::find_memorytype_index, renderer::Renderer};
 pub use ash::version::{EntryV1_0, InstanceV1_0};
 use ash::{version::DeviceV1_0, Device, Entry, Instance};
 use std::{
     borrow::Cow,
-    cell::RefCell,
     default::Default,
     ffi::{CStr, CString},
-    io::Cursor,
-    mem,
-    mem::align_of,
     ops::Drop,
 };
-use winit::{event::VirtualKeyCode, event_loop::ControlFlow, window::Window};
+use winit::event::VirtualKeyCode;
 
 #[derive(Clone, Debug, Copy)]
 struct Vertex {
     pos: [f32; 4],
     color: [f32; 4],
 }
+
+pub type Index = u16;
 
 pub fn record_submit_commandbuffer<D: DeviceV1_0, F: FnOnce(&D, vk::CommandBuffer)>(
     device: &D,
@@ -116,41 +116,6 @@ unsafe extern "system" fn vulkan_debug_callback(
     );
 
     vk::FALSE
-}
-
-pub fn find_memorytype_index(
-    memory_req: &vk::MemoryRequirements,
-    memory_prop: &vk::PhysicalDeviceMemoryProperties,
-    flags: vk::MemoryPropertyFlags,
-) -> Option<u32> {
-    // Try to find an exactly matching memory flag
-    let best_suitable_index =
-        find_memorytype_index_f(memory_req, memory_prop, flags, |property_flags, flags| {
-            property_flags == flags
-        });
-    if best_suitable_index.is_some() {
-        return best_suitable_index;
-    }
-    // Otherwise find a memory flag that works
-    find_memorytype_index_f(memory_req, memory_prop, flags, |property_flags, flags| {
-        property_flags & flags == flags
-    })
-}
-
-pub fn find_memorytype_index_f<F: Fn(vk::MemoryPropertyFlags, vk::MemoryPropertyFlags) -> bool>(
-    memory_req: &vk::MemoryRequirements,
-    memory_prop: &vk::PhysicalDeviceMemoryProperties,
-    flags: vk::MemoryPropertyFlags,
-    f: F,
-) -> Option<u32> {
-    let mut memory_type_bits = memory_req.memory_type_bits;
-    for (index, ref memory_type) in memory_prop.memory_types.iter().enumerate() {
-        if memory_type_bits & 1 == 1 && f(memory_type.property_flags, flags) {
-            return Some(index as u32);
-        }
-        memory_type_bits >>= 1;
-    }
-    None
 }
 
 pub struct Vulkan {

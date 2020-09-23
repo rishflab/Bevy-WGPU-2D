@@ -1,4 +1,4 @@
-use crate::{find_memorytype_index, Vertex};
+use crate::{Index, Vertex};
 use ash::{
     util::{read_spv, Align},
     version::DeviceV1_0,
@@ -23,12 +23,21 @@ pub struct Renderer {
     pub framebuffers: Vec<vk::Framebuffer>,
     pub graphics_pipelines: Vec<vk::Pipeline>,
     pub viewport: [vk::Viewport; 1],
+
+    // Memory
     pub index_buffer_memory: vk::DeviceMemory,
     pub vertex_input_buffer_memory: vk::DeviceMemory,
+    pub camera_buffer_memory: vk::DeviceMemory,
+    pub instance_buffer_memory: vk::DeviceMemory,
+
+    // Buffers
     pub index_buffer: vk::Buffer,
     pub vertex_input_buffer: vk::Buffer,
+    pub camera_buffer: vk::Buffer,
+    pub instance_buffer: vk::Buffer,
+
     pub scissors: [vk::Rect2D; 1],
-    pub index_buffer_data: [u32; 3],
+    pub index_buffer_data_len: usize,
     pub pipeline_layout: vk::PipelineLayout,
     pub vertex_shader_module: vk::ShaderModule,
     pub fragment_shader_module: vk::ShaderModule,
@@ -42,6 +51,8 @@ impl Renderer {
         depth_image_view: vk::ImageView,
         surface_resolution: vk::Extent2D,
         device_memory_properties: vk::PhysicalDeviceMemoryProperties,
+        vertices: &[Vertex],
+        index_buffer_data: &[Index],
     ) -> Self {
         unsafe {
             let renderpass_attachments = [
@@ -111,47 +122,6 @@ impl Renderer {
                 })
                 .collect();
 
-            let index_buffer_data = [0u32, 1, 2];
-            let index_buffer_info = vk::BufferCreateInfo::builder()
-                .size(std::mem::size_of_val(&index_buffer_data) as u64)
-                .usage(vk::BufferUsageFlags::INDEX_BUFFER)
-                .sharing_mode(vk::SharingMode::EXCLUSIVE);
-
-            let index_buffer = device.create_buffer(&index_buffer_info, None).unwrap();
-            let index_buffer_memory_req = device.get_buffer_memory_requirements(index_buffer);
-            let index_buffer_memory_index = find_memorytype_index(
-                &index_buffer_memory_req,
-                &device_memory_properties,
-                vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
-            )
-            .expect("Unable to find suitable memorytype for the index buffer.");
-
-            let index_allocate_info = vk::MemoryAllocateInfo {
-                allocation_size: index_buffer_memory_req.size,
-                memory_type_index: index_buffer_memory_index,
-                ..Default::default()
-            };
-            let index_buffer_memory = device.allocate_memory(&index_allocate_info, None).unwrap();
-            let index_ptr = device
-                .map_memory(
-                    index_buffer_memory,
-                    0,
-                    index_buffer_memory_req.size,
-                    vk::MemoryMapFlags::empty(),
-                )
-                .unwrap();
-            let mut index_slice = Align::new(
-                index_ptr,
-                align_of::<u32>() as u64,
-                index_buffer_memory_req.size,
-            );
-            index_slice.copy_from_slice(&index_buffer_data);
-            device.unmap_memory(index_buffer_memory);
-
-            device
-                .bind_buffer_memory(index_buffer, index_buffer_memory, 0)
-                .unwrap();
-
             let vertex_input_buffer_info = vk::BufferCreateInfo {
                 size: 3 * std::mem::size_of::<Vertex>() as u64,
                 usage: vk::BufferUsageFlags::VERTEX_BUFFER,
@@ -166,7 +136,7 @@ impl Renderer {
             let vertex_input_buffer_memory_req =
                 device.get_buffer_memory_requirements(vertex_input_buffer);
 
-            let vertex_input_buffer_memory_index = find_memorytype_index(
+            let vertex_input_buffer_memory_index = find_memory_type_index(
                 &vertex_input_buffer_memory_req,
                 &device_memory_properties,
                 vk::MemoryPropertyFlags::HOST_VISIBLE | vk::MemoryPropertyFlags::HOST_COHERENT,
@@ -182,21 +152,6 @@ impl Renderer {
             let vertex_input_buffer_memory = device
                 .allocate_memory(&vertex_buffer_allocate_info, None)
                 .unwrap();
-
-            let vertices = [
-                Vertex {
-                    pos: [-1.0, 1.0, 0.0, 1.0],
-                    color: [0.0, 1.0, 0.0, 1.0],
-                },
-                Vertex {
-                    pos: [1.0, 1.0, 0.0, 1.0],
-                    color: [0.0, 0.0, 1.0, 1.0],
-                },
-                Vertex {
-                    pos: [0.0, -1.0, 0.0, 1.0],
-                    color: [1.0, 0.0, 0.0, 1.0],
-                },
-            ];
 
             let vert_ptr = device
                 .map_memory(
