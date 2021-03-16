@@ -173,7 +173,7 @@ fn move_camera(world: &World, dt: Duration, _instant: Instant) {
         &MoveSpeed,
     )>();
 
-    let (_, (_, cam, key, speed)) = q.iter().next().expect("active camera is preset");
+    let (_, (_, cam, key, speed)) = q.iter().next().expect("active camera is present");
     if let Some(input) = key.0 {
         let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
         match input {
