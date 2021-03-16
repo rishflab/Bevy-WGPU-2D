@@ -8,7 +8,7 @@ use crate::{
 use std::{mem, num::NonZeroU32};
 use wgpu::{util::DeviceExt, BlendFactor, BlendOperation};
 
-pub const TEXTURE_ARRAY_SIZE: u32 = 128;
+pub const TEXTURE_ARRAY_SIZE: usize = 128;
 
 pub struct Renderer {
     sprites: Vec<Sprite>,
@@ -70,7 +70,7 @@ impl Renderer {
                             multisampled: false,
                         },
                         count: Some(
-                            NonZeroU32::new(TEXTURE_ARRAY_SIZE)
+                            NonZeroU32::new(TEXTURE_ARRAY_SIZE as u32)
                                 .expect("array texture count should be a positive number"),
                         ),
                     },

@@ -62,7 +62,7 @@ impl Sprite {
             )
         }
 
-        let views: [&TextureView; TEXTURE_ARRAY_SIZE as usize] = views
+        let views: [&TextureView; TEXTURE_ARRAY_SIZE] = views
             .try_into()
             .expect("correct number of textures views provided");
 
