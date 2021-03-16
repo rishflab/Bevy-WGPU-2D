@@ -28,9 +28,18 @@ impl PlayerState {
         match self {
             Self::Idle => 0,
             Self::Walk(start) => {
-                let animation = vec![(2, 0.2), (1, 0.0)];
+                let animation = vec![
+                    (7, 0.7),
+                    (6, 0.6),
+                    (5, 0.5),
+                    (4, 0.4),
+                    (3, 0.3),
+                    (2, 0.2),
+                    (1, 0.1),
+                    (0, 0.0),
+                ];
                 let dt = now - *start;
-                let dt = dt.as_secs_f32() % 0.4;
+                let dt = dt.as_secs_f32() % 0.8;
                 let mut frame = 0;
                 for (f, time) in animation {
                     if dt > time {
@@ -51,9 +60,14 @@ fn main() {
 
     let sprite_assets = vec![
         SpriteAsset::new("player", vec![
-            "assets/adventurer_idle.png",
-            "assets/adventurer_walk1.png",
-            "assets/adventurer_walk2.png",
+            "assets/run0.png",
+            "assets/run1.png",
+            "assets/run2.png",
+            "assets/run3.png",
+            "assets/run4.png",
+            "assets/run5.png",
+            "assets/run6.png",
+            "assets/run7.png",
         ]),
         SpriteAsset::new("apple", vec!["assets/apple.png"]),
         SpriteAsset::new("ashberry", vec!["assets/ashberry.png"]),
