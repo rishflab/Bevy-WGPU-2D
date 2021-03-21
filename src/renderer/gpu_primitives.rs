@@ -42,7 +42,7 @@ pub struct Instance {
     pub position: Vec3,
     pub rotation: Quat,
     pub scale: f32,
-    pub frame_id: u32,
+    pub frame_id: u8,
 }
 
 #[repr(C)]
@@ -59,7 +59,7 @@ impl From<Instance> for InstanceRaw {
                 * glam::Mat4::from_quat(from.rotation)
                 * glam::Mat4::from_scale(Vec3::splat(from.scale)))
             .to_cols_array_2d(),
-            frame_id: from.frame_id,
+            frame_id: from.frame_id as u32,
         }
     }
 }

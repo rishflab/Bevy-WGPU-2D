@@ -57,7 +57,7 @@ pub struct ArrayTexture {
 }
 
 impl ArrayTexture {
-    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, image: RgbaImage) -> Self {
+    pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, image: &RgbaImage) -> Self {
         let texels = image.to_vec();
         let texture_extent = wgpu::Extent3d {
             width: image.width(),

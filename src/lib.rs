@@ -1,13 +1,16 @@
 #![feature(in_band_lifetimes)]
 
+use crate::sprite::Sprite;
 use crate::{
     camera::{ActiveCamera, Camera, ParallaxCamera},
-    gpu_primitives::{Instance, InstanceRaw},
-    scene::Scene,
     time::Timer,
 };
+pub use app::App;
 use glam::{Quat, Vec3};
 use hecs::{DynamicBundle, Entity, World};
+use renderer::gpu_primitives::{Instance, InstanceRaw};
+use renderer::scene::Scene;
+pub use renderer::TEXTURE_ARRAY_SIZE;
 use std::{
     collections::HashMap,
     time::{Duration, Instant},
@@ -17,33 +20,14 @@ use winit::event::WindowEvent;
 pub mod app;
 pub mod asset;
 pub mod camera;
-mod gpu_primitives;
 mod renderer;
-mod scene;
-mod sprite;
-mod texture;
+pub mod sprite;
 mod time;
-
-pub use app::App;
 
 pub struct Position(pub Vec3);
 pub struct Rotation(pub Quat);
 pub struct Scale(pub u8);
 pub struct KeyboardInput(pub Option<winit::event::KeyboardInput>);
-
-pub struct Sprite {
-    id: String,
-    pub frame_id: u32,
-}
-
-impl Sprite {
-    pub fn new(id: &str) -> Self {
-        Self {
-            id: id.to_string(),
-            frame_id: 0,
-        }
-    }
-}
 
 pub struct Game<'a> {
     world: World,

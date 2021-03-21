@@ -1,4 +1,4 @@
-use crate::gpu_primitives::{CameraUniform, InstanceRaw};
+use crate::renderer::gpu_primitives::{CameraUniform, InstanceRaw};
 use std::collections::HashMap;
 
 pub struct Scene {

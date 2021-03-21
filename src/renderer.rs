@@ -1,12 +1,18 @@
-use crate::{
-    asset::SpriteAsset,
-    gpu_primitives::{CameraUniform, InstanceRaw, Vertex},
-    scene::Scene,
-    sprite::{DrawSprite, Sprite},
-    texture::DepthTexture,
-};
 use std::{mem, num::NonZeroU32};
+
 use wgpu::{util::DeviceExt, BlendFactor, BlendOperation};
+
+use gpu_primitives::{CameraUniform, InstanceRaw, Vertex};
+use scene::Scene;
+use sprite::{DrawSprite, Sprite};
+use texture::DepthTexture;
+
+use crate::asset::SpriteData;
+
+pub mod gpu_primitives;
+pub mod scene;
+pub mod sprite;
+pub mod texture;
 
 pub const TEXTURE_ARRAY_SIZE: usize = 128;
 
@@ -23,7 +29,7 @@ impl Renderer {
         sc_desc: &wgpu::SwapChainDescriptor,
         device: &mut wgpu::Device,
         queue: &wgpu::Queue,
-        sprite_assets: Vec<SpriteAsset>,
+        sprite_assets: Vec<SpriteData>,
     ) -> Self {
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -89,7 +95,13 @@ impl Renderer {
         let mut sprites = vec![];
 
         for asset in sprite_assets {
-            sprites.push(Sprite::new(device, queue, &sprite_bind_group_layout, asset));
+            sprites.push(Sprite::new(
+                device,
+                queue,
+                &sprite_bind_group_layout,
+                asset.id,
+                asset.frames,
+            ));
         }
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

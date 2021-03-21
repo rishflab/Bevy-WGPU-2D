@@ -1,4 +1,4 @@
-use crate::{asset::SpriteAsset, renderer::Renderer, Game};
+use crate::{asset::SpriteData, renderer::Renderer, Game};
 use winit::{
     dpi::LogicalSize,
     event::{self, WindowEvent},
@@ -88,7 +88,7 @@ impl App {
         mut self,
         event_loop: EventLoop<()>,
         mut game: Game<'static>,
-        sprites: Vec<SpriteAsset>,
+        sprites: Vec<SpriteData>,
     ) {
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
