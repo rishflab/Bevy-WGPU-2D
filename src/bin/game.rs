@@ -53,6 +53,7 @@ fn main() {
         SpriteData::load("ashberry", vec!["assets/ashberry.png"]),
         SpriteData::load("baobab", vec!["assets/baobab.png"]),
         SpriteData::load("beech", vec!["assets/beech.png"]),
+        SpriteData::load("dark_block", vec!["assets/dark_block.png"]),
     ];
 
     let anim_timeline = AnimTimeline::new(
@@ -151,19 +152,19 @@ fn main() {
         movespeed,
     );
 
-    let apple = (
-        Position(Vec3::new(-2.0, 0.0, 30.0)),
-        Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
-        Scale(1),
-        Sprite::new("apple"),
-    );
-
-    let ashberry = (
-        Position(Vec3::new(2.0, 0.0, 30.0)),
-        Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
-        Scale(1),
-        Sprite::new("ashberry"),
-    );
+    // let apple = (
+    //     Position(Vec3::new(-2.0, 0.0, 30.0)),
+    //     Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
+    //     Scale(1),
+    //     Sprite::new("apple"),
+    // );
+    //
+    // let ashberry = (
+    //     Position(Vec3::new(2.0, 0.0, 30.0)),
+    //     Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
+    //     Scale(1),
+    //     Sprite::new("ashberry"),
+    // );
 
     let baobab = (
         Position(Vec3::new(3.0, 0.0, 55.0)),
@@ -179,12 +180,14 @@ fn main() {
         Sprite::new("beech"),
     );
 
-    parallax_demo.spawn_entity(player);
-    parallax_demo.spawn_entity(apple);
-    parallax_demo.spawn_entity(ashberry);
-    parallax_demo.spawn_entity(baobab);
-    parallax_demo.spawn_entity(beech);
-    parallax_demo.spawn_entity(camera);
+    parallax_demo.spawn(player);
+    // parallax_demo.spawn(apple);
+    // parallax_demo.spawn(ashberry);
+    parallax_demo.spawn(baobab);
+    parallax_demo.spawn(beech);
+    parallax_demo.spawn(camera);
+
+    parallax_demo.spawn_batch(floor());
 
     parallax_demo.add_system(&move_player);
     parallax_demo.add_system(&move_camera);
@@ -273,4 +276,17 @@ fn update_animation_state(world: &World, _dt: Duration, instant: Instant) {
     for (_, (state, sprite, timeline)) in q.iter() {
         sprite.frame_id = state.animation_state(instant, timeline);
     }
+}
+
+fn floor() -> Vec<(Position, Rotation, Scale, Sprite)> {
+    (-5..5)
+        .map(|i| {
+            (
+                Position(Vec3::new(1.90 * i as f32, -2.0, 20.0)),
+                Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
+                Scale(1),
+                Sprite::new("dark_block"),
+            )
+        })
+        .collect()
 }

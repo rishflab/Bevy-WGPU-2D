@@ -7,7 +7,7 @@ use crate::{
 };
 pub use app::App;
 use glam::{Quat, Vec3};
-use hecs::{DynamicBundle, Entity, World};
+use hecs::{Bundle, DynamicBundle, Entity, SpawnBatchIter, World};
 use renderer::gpu_primitives::{Instance, InstanceRaw};
 use renderer::scene::Scene;
 pub use renderer::TEXTURE_ARRAY_SIZE;
@@ -50,9 +50,17 @@ impl<'a> Game<'a> {
         }
         self.build_scene()
     }
-    pub fn spawn_entity(&mut self, components: impl DynamicBundle) -> Entity {
+    pub fn spawn(&mut self, components: impl DynamicBundle) -> Entity {
         self.world.spawn(components)
     }
+    pub fn spawn_batch<I>(&mut self, iter: I) -> SpawnBatchIter<'_, I::IntoIter>
+    where
+        I: IntoIterator,
+        I::Item: Bundle,
+    {
+        self.world.spawn_batch(iter)
+    }
+
     pub fn add_system(&mut self, system: &'a dyn Fn(&World, Duration, Instant)) {
         self.systems.push(system)
     }
