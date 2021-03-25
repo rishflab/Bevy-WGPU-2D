@@ -5,7 +5,11 @@ use std::{
 };
 
 fn main() {
-    let shader_paths = vec!["shaders/shader.vert", "shaders/shader.frag"];
+    let shader_paths = vec![
+        "shaders/shader.vert",
+        "shaders/shader.frag",
+        "shaders/wire.frag",
+    ];
 
     let mut compiler = shaderc::Compiler::new().expect("Able to create shader compiler");
 

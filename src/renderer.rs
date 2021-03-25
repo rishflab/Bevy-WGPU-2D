@@ -8,8 +8,10 @@ use sprite::{DrawSprite, Sprite};
 use texture::DepthTexture;
 
 use crate::asset::SpriteData;
+use crate::renderer::hitbox::{DrawHitbox, Hitbox};
 
 pub mod gpu_primitives;
+mod hitbox;
 pub mod scene;
 pub mod sprite;
 pub mod texture;
@@ -18,8 +20,10 @@ pub const TEXTURE_ARRAY_SIZE: usize = 128;
 
 pub struct Renderer {
     sprites: Vec<Sprite>,
+    hitboxes: Vec<Hitbox>,
     uniform_buffer: wgpu::Buffer,
-    pipeline: wgpu::RenderPipeline,
+    sprite_pipeline: wgpu::RenderPipeline,
+    hitbox_pipeline: wgpu::RenderPipeline,
     depth_texture: DepthTexture,
     uniform_bind_group: wgpu::BindGroup,
 }
@@ -110,15 +114,16 @@ impl Renderer {
             push_constant_ranges: &[],
         });
 
-        // Create the render pipeline
         let vs_module =
             device.create_shader_module(&wgpu::include_spirv!("../shaders/shader.vert.spv"));
         let fs_module =
             device.create_shader_module(&wgpu::include_spirv!("../shaders/shader.frag.spv"));
+        let wire_module =
+            device.create_shader_module(&wgpu::include_spirv!("../shaders/wire.frag.spv"));
 
         let depth_texture = DepthTexture::new(&device, &sc_desc);
 
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let sprite_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
@@ -159,12 +164,54 @@ impl Renderer {
             multisample: wgpu::MultisampleState::default(),
         });
 
+        let hitbox_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &vs_module,
+                entry_point: "main",
+                buffers: &[Vertex::desc(), InstanceRaw::desc()],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &wire_module,
+                entry_point: "main",
+                targets: &[wgpu::ColorTargetState {
+                    format: sc_desc.format,
+                    color_blend: wgpu::BlendState {
+                        operation: wgpu::BlendOperation::Add,
+                        src_factor: wgpu::BlendFactor::SrcAlpha,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                    },
+                    alpha_blend: wgpu::BlendState::REPLACE,
+                    write_mask: wgpu::ColorWrite::ALL,
+                }],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineStrip,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: wgpu::CullMode::Back,
+                polygon_mode: wgpu::PolygonMode::Line,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DepthTexture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
+                bias: Default::default(),
+                clamp_depth: false,
+            }),
+            multisample: wgpu::MultisampleState::default(),
+        });
+
         Renderer {
             uniform_buffer,
-            pipeline,
+            sprite_pipeline,
+            hitbox_pipeline,
             sprites,
             depth_texture,
             uniform_bind_group,
+            hitboxes: vec![Hitbox::new(device, "cuboid".to_string())],
         }
     }
 
@@ -181,6 +228,12 @@ impl Renderer {
             0,
             bytemuck::bytes_of(&scene.camera_uniform),
         );
+
+        for hitbox in self.hitboxes.iter_mut() {
+            if let Some(instances) = scene.hitbox_instances.get(&hitbox.id) {
+                hitbox.update_instance_buffer(instances.clone(), queue);
+            }
+        }
 
         for sprite in self.sprites.iter_mut() {
             if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
@@ -216,11 +269,25 @@ impl Renderer {
                 }),
             });
 
-            rpass.set_pipeline(&self.pipeline);
+            rpass.set_pipeline(&self.sprite_pipeline);
 
-            for sprite in self.sprites.iter_mut() {
+            for sprite in self.sprites.iter() {
                 if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
                     rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
+                }
+            }
+
+            rpass.set_pipeline(&self.hitbox_pipeline);
+
+            for sprite in self.sprites.iter() {
+                if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
+                    rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
+                }
+            }
+
+            for hitbox in self.hitboxes.iter() {
+                if let Some(instances) = scene.hitbox_instances.get(&hitbox.id) {
+                    rpass.draw_hitbox(hitbox, 0..instances.len() as u32, &self.uniform_bind_group);
                 }
             }
         }

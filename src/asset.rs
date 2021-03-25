@@ -19,7 +19,7 @@ impl SpriteData {
                 .collect(),
         }
     }
-    pub fn load_from_anim_strips(id: &str, strips: Vec<&str>) -> Self {
+    pub fn load_from_anim_strips(id: &str, strips: Vec<&str>, view: View) -> Self {
         let frames = strips
             .iter()
             .map(|path| {
@@ -32,6 +32,7 @@ impl SpriteData {
                     .map(|i| {
                         image
                             .sub_image(image.height() * i, 0, image.height(), image.height())
+                            .sub_image(view.x, view.y, view.width, view.height)
                             .to_image()
                     })
                     .collect::<Vec<RgbaImage>>()
@@ -44,4 +45,11 @@ impl SpriteData {
             frames,
         }
     }
+}
+
+pub struct View {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }

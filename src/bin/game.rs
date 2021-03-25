@@ -2,11 +2,12 @@
 #![feature(or_patterns)]
 extern crate erlking;
 
+use erlking::asset::View;
 use erlking::sprite::{AnimTimeline, KeyFrame, Sprite};
 use erlking::{
     asset::SpriteData,
     camera::{ActiveCamera, ParallaxCamera},
-    App, Game, KeyboardInput, Position, Rotation, Scale,
+    App, CuboidCollider, Game, KeyboardInput, Position, Rotation, Scale,
 };
 use glam::{Quat, Vec3};
 use hecs::World;
@@ -45,10 +46,16 @@ fn main() {
     let mut parallax_demo = Game::new();
 
     let sprite_assets = vec![
-        SpriteData::load_from_anim_strips("player", vec![
-            "assets/huntress/idle.png",
-            "assets/huntress/run.png",
-        ]),
+        SpriteData::load_from_anim_strips(
+            "player",
+            vec!["assets/huntress/idle.png", "assets/huntress/run.png"],
+            View {
+                x: 55,
+                y: 53,
+                width: 40,
+                height: 50,
+            },
+        ),
         SpriteData::load("apple", vec!["assets/apple.png"]),
         SpriteData::load("ashberry", vec!["assets/ashberry.png"]),
         SpriteData::load("baobab", vec!["assets/baobab.png"]),
@@ -142,29 +149,30 @@ fn main() {
     );
 
     let player = (
-        Position(Vec3::new(0.0, 0.0, 20.0)),
+        Position(Vec3::new(0.0, 0.2, 20.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         KeyboardInput(None),
         Sprite::new("player"),
         anim_timeline,
         PlayerState::Idle(Instant::now()),
+        CuboidCollider(0.6, 1.25),
         movespeed,
     );
 
-    // let apple = (
-    //     Position(Vec3::new(-2.0, 0.0, 30.0)),
-    //     Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
-    //     Scale(1),
-    //     Sprite::new("apple"),
-    // );
-    //
-    // let ashberry = (
-    //     Position(Vec3::new(2.0, 0.0, 30.0)),
-    //     Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
-    //     Scale(1),
-    //     Sprite::new("ashberry"),
-    // );
+    let apple = (
+        Position(Vec3::new(-2.0, 0.0, 20.0)),
+        Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
+        Scale(1),
+        Sprite::new("apple"),
+    );
+
+    let ashberry = (
+        Position(Vec3::new(2.0, 0.0, 20.0)),
+        Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
+        Scale(1),
+        Sprite::new("ashberry"),
+    );
 
     let baobab = (
         Position(Vec3::new(3.0, 0.0, 55.0)),
@@ -181,8 +189,8 @@ fn main() {
     );
 
     parallax_demo.spawn(player);
-    // parallax_demo.spawn(apple);
-    // parallax_demo.spawn(ashberry);
+    parallax_demo.spawn(apple);
+    parallax_demo.spawn(ashberry);
     parallax_demo.spawn(baobab);
     parallax_demo.spawn(beech);
     parallax_demo.spawn(camera);
@@ -282,7 +290,7 @@ fn floor() -> Vec<(Position, Rotation, Scale, Sprite)> {
     (-5..5)
         .map(|i| {
             (
-                Position(Vec3::new(1.90 * i as f32, -2.0, 20.0)),
+                Position(Vec3::new(1.0 * i as f32, -1.0, 20.0)),
                 Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
                 Scale(1),
                 Sprite::new("dark_block"),

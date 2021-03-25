@@ -46,7 +46,8 @@ impl App {
 
         let optional_features = wgpu::Features::empty()
             | wgpu::Features::SAMPLED_TEXTURE_BINDING_ARRAY
-            | wgpu::Features::SAMPLED_TEXTURE_ARRAY_DYNAMIC_INDEXING;
+            | wgpu::Features::SAMPLED_TEXTURE_ARRAY_DYNAMIC_INDEXING
+            | wgpu::Features::NON_FILL_POLYGON_MODE;
         let required_features = wgpu::Features::empty();
         let adapter_features = adapter.features();
         assert!(

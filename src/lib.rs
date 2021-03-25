@@ -28,6 +28,7 @@ pub struct Position(pub Vec3);
 pub struct Rotation(pub Quat);
 pub struct Scale(pub u8);
 pub struct KeyboardInput(pub Option<winit::event::KeyboardInput>);
+pub struct CuboidCollider(pub f32, pub f32);
 
 pub struct Game<'a> {
     world: World,
@@ -74,7 +75,7 @@ impl<'a> Game<'a> {
             let instance_raw = InstanceRaw::from(Instance {
                 position: pos.0,
                 rotation: rot.0,
-                scale: scale.0 as f32,
+                scale: Vec3::splat(scale.0 as f32),
                 frame_id: sprite.frame_id,
             });
             if let Some(instances) = sprites.get(&sprite.id) {
@@ -86,6 +87,28 @@ impl<'a> Game<'a> {
                 sprites.insert(sprite.id.clone(), vec![instance_raw]);
             }
         }
+        let mut colliders: HashMap<String, Vec<InstanceRaw>> = HashMap::default();
+        let collider_id = "cuboid".to_string();
+
+        for (_, (pos, rot, collider)) in &mut self
+            .world
+            .query::<(&Position, &Rotation, &CuboidCollider)>()
+        {
+            let instance_raw = InstanceRaw::from(Instance {
+                position: pos.0,
+                rotation: rot.0,
+                scale: Vec3::new(collider.0, collider.1, 1.0),
+                frame_id: 0,
+            });
+            if let Some(instances) = colliders.get(&collider_id) {
+                // TODO: try and remove these clones
+                let mut new = instances.clone();
+                new.push(instance_raw);
+                colliders.insert(collider_id.clone(), new);
+            } else {
+                colliders.insert(collider_id.clone(), vec![instance_raw]);
+            }
+        }
 
         let mut q = self.world.query::<(&ActiveCamera, &ParallaxCamera)>();
 
@@ -94,6 +117,7 @@ impl<'a> Game<'a> {
         Scene {
             sprite_instances: sprites,
             camera_uniform: cam.generate_matrix(),
+            hitbox_instances: colliders,
         }
     }
     fn capture_input(&self, event: winit::event::WindowEvent) {

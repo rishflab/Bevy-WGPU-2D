@@ -6,8 +6,6 @@ use crate::app::WINDOW_SIZE;
 use crate::renderer::gpu_primitives::CameraUniform;
 use crate::renderer::sprite::PIXELS_PER_METRE;
 
-pub const SPRITE_SCALING_FACTOR: u8 = 2;
-
 pub struct ActiveCamera;
 
 pub trait Camera {
@@ -34,10 +32,8 @@ impl ParallaxCamera {
         }
     }
     pub fn generate_ortho(&self) -> glam::Mat4 {
-        let h =
-            (WINDOW_SIZE.height as f32) / (SPRITE_SCALING_FACTOR as f32 * PIXELS_PER_METRE as f32);
-        let w =
-            (WINDOW_SIZE.width as f32) / (SPRITE_SCALING_FACTOR as f32 * PIXELS_PER_METRE as f32);
+        let h = (WINDOW_SIZE.height / PIXELS_PER_METRE) as f32;
+        let w = (WINDOW_SIZE.width / PIXELS_PER_METRE) as f32;
 
         let mx_ortho =
             glam::Mat4::orthographic_lh(-w / 2.0, w / 2.0, -h / 2.0, h / 2.0, self.near, self.far);

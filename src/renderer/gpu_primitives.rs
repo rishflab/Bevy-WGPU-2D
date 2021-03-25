@@ -41,12 +41,12 @@ pub struct CameraUniform {
 pub struct Instance {
     pub position: Vec3,
     pub rotation: Quat,
-    pub scale: f32,
+    pub scale: Vec3,
     pub frame_id: u8,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct InstanceRaw {
     model: [[f32; 4]; 4],
     frame_id: u32,
@@ -57,7 +57,7 @@ impl From<Instance> for InstanceRaw {
         InstanceRaw {
             model: (glam::Mat4::from_translation(from.position)
                 * glam::Mat4::from_quat(from.rotation)
-                * glam::Mat4::from_scale(Vec3::splat(from.scale)))
+                * glam::Mat4::from_scale(from.scale))
             .to_cols_array_2d(),
             frame_id: from.frame_id as u32,
         }
