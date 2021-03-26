@@ -279,11 +279,12 @@ impl Renderer {
 
             rpass.set_pipeline(&self.hitbox_pipeline);
 
-            for sprite in self.sprites.iter() {
-                if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
-                    rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
-                }
-            }
+            // // render sprite outlines
+            // for sprite in self.sprites.iter() {
+            //     if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
+            //         rpass.draw_sprite(sprite, 0..instances.len() as u32,
+            // &self.uniform_bind_group);     }
+            // }
 
             for hitbox in self.hitboxes.iter() {
                 if let Some(instances) = scene.hitbox_instances.get(&hitbox.id) {

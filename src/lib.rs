@@ -28,7 +28,7 @@ pub struct Position(pub Vec3);
 pub struct Rotation(pub Quat);
 pub struct Scale(pub u8);
 pub struct KeyboardInput(pub Option<winit::event::KeyboardInput>);
-pub struct CuboidCollider(pub f32, pub f32);
+pub struct Collider(pub parry2d::shape::Cuboid);
 
 pub struct Game<'a> {
     world: World,
@@ -90,14 +90,17 @@ impl<'a> Game<'a> {
         let mut colliders: HashMap<String, Vec<InstanceRaw>> = HashMap::default();
         let collider_id = "cuboid".to_string();
 
-        for (_, (pos, rot, collider)) in &mut self
-            .world
-            .query::<(&Position, &Rotation, &CuboidCollider)>()
+        for (_, (pos, rot, collider)) in
+            &mut self.world.query::<(&Position, &Rotation, &Collider)>()
         {
             let instance_raw = InstanceRaw::from(Instance {
                 position: pos.0,
                 rotation: rot.0,
-                scale: Vec3::new(collider.0, collider.1, 1.0),
+                scale: Vec3::new(
+                    2.0 * collider.0.half_extents.x,
+                    2.0 * collider.0.half_extents.y,
+                    1.0,
+                ),
                 frame_id: 0,
             });
             if let Some(instances) = colliders.get(&collider_id) {

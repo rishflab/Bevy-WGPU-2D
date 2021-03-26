@@ -7,10 +7,13 @@ use erlking::sprite::{AnimTimeline, KeyFrame, Sprite};
 use erlking::{
     asset::SpriteData,
     camera::{ActiveCamera, ParallaxCamera},
-    App, CuboidCollider, Game, KeyboardInput, Position, Rotation, Scale,
+    App, Collider, Game, KeyboardInput, Position, Rotation, Scale,
 };
 use glam::{Quat, Vec3};
 use hecs::World;
+use parry2d::math::Isometry;
+use parry2d::na::Vector2;
+use parry2d::shape::Cuboid;
 use std::time::{Duration, Instant};
 use winit::{
     event::{ElementState, VirtualKeyCode},
@@ -19,6 +22,15 @@ use winit::{
 
 #[derive(Clone, Copy)]
 struct MoveSpeed(f32);
+
+#[derive(Debug, Copy, Clone)]
+enum Input {
+    Left,
+    Right,
+    None,
+}
+
+struct Terrain;
 
 enum PlayerState {
     Idle(Instant),
@@ -143,9 +155,7 @@ fn main() {
             0.1,
             500.0,
         ),
-        KeyboardInput(None),
         ActiveCamera,
-        movespeed,
     );
 
     let player = (
@@ -155,8 +165,9 @@ fn main() {
         KeyboardInput(None),
         Sprite::new("player"),
         anim_timeline,
+        Input::None,
         PlayerState::Idle(Instant::now()),
-        CuboidCollider(0.6, 1.25),
+        Collider(Cuboid::new(Vector2::new(0.4, 0.6))),
         movespeed,
     );
 
@@ -165,6 +176,8 @@ fn main() {
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         Sprite::new("apple"),
+        Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
+        Terrain,
     );
 
     let ashberry = (
@@ -172,6 +185,8 @@ fn main() {
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         Sprite::new("ashberry"),
+        Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
+        Terrain,
     );
 
     let baobab = (
@@ -179,6 +194,8 @@ fn main() {
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         Sprite::new("baobab"),
+        Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
+        Terrain,
     );
 
     let beech = (
@@ -186,6 +203,8 @@ fn main() {
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         Sprite::new("beech"),
+        Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
+        Terrain,
     );
 
     parallax_demo.spawn(player);
@@ -197,83 +216,100 @@ fn main() {
 
     parallax_demo.spawn_batch(floor());
 
-    parallax_demo.add_system(&move_player);
-    parallax_demo.add_system(&move_camera);
+    parallax_demo.add_system(&process_keyboard_input);
+    parallax_demo.add_system(&apply_input_to_player);
+    parallax_demo.add_system(&update_camera_position);
     parallax_demo.add_system(&update_animation_state);
 
     app.run(event_loop, parallax_demo, sprite_assets);
 }
 
-fn move_player(world: &World, dt: Duration, instant: Instant) {
-    let mut q = world.query::<(&KeyboardInput, &mut Position, &MoveSpeed, &mut PlayerState)>();
+fn process_keyboard_input(world: &World, _dt: Duration, _instant: Instant) {
+    let mut q = world.query::<(&KeyboardInput, &mut Input)>();
 
-    for (_, (key, pos, speed, state)) in q.iter() {
+    for (_, (key, command)) in q.iter() {
         if let Some(input) = key.0 {
-            let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
             match input {
                 winit::event::KeyboardInput {
                     state: ElementState::Pressed,
                     virtual_keycode: Some(VirtualKeyCode::Left),
                     ..
-                } => {
-                    match state {
-                        PlayerState::Idle(..) => *state = PlayerState::Run(instant),
-                        _ => (),
-                    }
-                    pos.0 -= dx;
-                }
+                } => *command = Input::Left,
                 winit::event::KeyboardInput {
                     state: ElementState::Pressed,
                     virtual_keycode: Some(VirtualKeyCode::Right),
                     ..
-                } => {
-                    match state {
-                        PlayerState::Idle(..) => *state = PlayerState::Run(instant),
-                        _ => (),
-                    }
-                    pos.0 += dx;
-                }
-                _ => match state {
-                    PlayerState::Run(..) => *state = PlayerState::Idle(instant),
-                    _ => (),
-                },
+                } => *command = Input::Right,
+                _ => *command = Input::None,
             }
         } else {
-            match state {
-                PlayerState::Run(..) => *state = PlayerState::Idle(instant),
-                _ => (),
+            *command = Input::None;
+        }
+    }
+}
+
+fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
+    let mut q = world.query::<(
+        &mut PlayerState,
+        &mut Input,
+        &mut Position,
+        &MoveSpeed,
+        &Collider,
+    )>();
+
+    let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
+
+    for (_, (state, input, player_pos, speed, collider)) in q.iter() {
+        let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
+
+        let new_pos = match input {
+            Input::Left => {
+                match state {
+                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
+                    _ => (),
+                }
+                Some(player_pos.0 + dx)
+            }
+            Input::Right => {
+                match state {
+                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
+                    _ => (),
+                }
+                Some(player_pos.0 - dx)
+            }
+            _ => {
+                *state = PlayerState::Idle(instant);
+                None
+            }
+        };
+
+        if let Some(pos) = new_pos {
+            let collisions = terrain
+                .iter()
+                .filter(|(_, (other, other_pos, _))| {
+                    parry2d::query::intersection_test(
+                        &Isometry::translation(other_pos.0.x, other_pos.0.y),
+                        &other.0,
+                        &Isometry::translation(pos.x, pos.y),
+                        &collider.0,
+                    )
+                    .unwrap()
+                })
+                .count();
+
+            if collisions == 0 {
+                player_pos.0 = pos;
             }
         }
     }
 }
 
-fn move_camera(world: &World, dt: Duration, _instant: Instant) {
-    let mut q = world.query::<(
-        &ActiveCamera,
-        &mut ParallaxCamera,
-        &KeyboardInput,
-        &MoveSpeed,
-    )>();
+fn update_camera_position(world: &World, _dt: Duration, _instant: Instant) {
+    if let Some((_, (_, pos))) = world.query::<(&PlayerState, &mut Position)>().iter().next() {
+        let mut q = world.query::<(&ActiveCamera, &mut ParallaxCamera)>();
 
-    let (_, (_, cam, key, speed)) = q.iter().next().expect("active camera is present");
-    if let Some(input) = key.0 {
-        let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
-        match input {
-            winit::event::KeyboardInput {
-                state: ElementState::Pressed,
-                virtual_keycode: Some(VirtualKeyCode::Left),
-                ..
-            } => {
-                cam.eye -= dx;
-            }
-            winit::event::KeyboardInput {
-                state: ElementState::Pressed,
-                virtual_keycode: Some(VirtualKeyCode::Right),
-                ..
-            } => {
-                cam.eye += dx;
-            }
-            _ => (),
+        if let Some((_, (_, camera))) = q.iter().next() {
+            camera.eye.x = pos.0.x;
         }
     }
 }
@@ -286,7 +322,7 @@ fn update_animation_state(world: &World, _dt: Duration, instant: Instant) {
     }
 }
 
-fn floor() -> Vec<(Position, Rotation, Scale, Sprite)> {
+fn floor() -> Vec<(Position, Rotation, Scale, Sprite, Collider, Terrain)> {
     (-5..5)
         .map(|i| {
             (
@@ -294,6 +330,8 @@ fn floor() -> Vec<(Position, Rotation, Scale, Sprite)> {
                 Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
                 Scale(1),
                 Sprite::new("dark_block"),
+                Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
+                Terrain,
             )
         })
         .collect()

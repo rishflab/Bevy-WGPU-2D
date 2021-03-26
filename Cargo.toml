@@ -16,6 +16,8 @@ wgpu = "0.7"
 hecs = "0.3"
 image = "0.23"
 arrayvec = "0.5"
+parry2d = "0.2"
+nalgebra = "0.25"
 
 [build-dependencies]
 shaderc = "0.7"
