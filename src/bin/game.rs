@@ -2,7 +2,7 @@
 #![feature(or_patterns)]
 extern crate erlking;
 
-use erlking::asset::View;
+use erlking::asset::{SpriteId, SpriteRegistry, View};
 use erlking::sprite::{AnimTimeline, KeyFrame, Sprite};
 use erlking::{
     asset::SpriteData,
@@ -57,23 +57,27 @@ fn main() {
     let app = futures::executor::block_on(App::new("parallax-demo", &event_loop));
     let mut parallax_demo = Game::new();
 
-    let sprite_assets = vec![
-        SpriteData::load_from_anim_strips(
-            "player",
-            vec!["assets/huntress/idle.png", "assets/huntress/run.png"],
-            View {
-                x: 55,
-                y: 53,
-                width: 40,
-                height: 50,
-            },
-        ),
-        SpriteData::load("apple", vec!["assets/apple.png"]),
-        SpriteData::load("ashberry", vec!["assets/ashberry.png"]),
-        SpriteData::load("baobab", vec!["assets/baobab.png"]),
-        SpriteData::load("beech", vec!["assets/beech.png"]),
-        SpriteData::load("dark_block", vec!["assets/dark_block.png"]),
-    ];
+    let mut sprite_registry = SpriteRegistry::new();
+
+    let player_sprite = sprite_registry.insert(SpriteData::load_from_anim_strips(
+        "player",
+        vec!["assets/huntress/idle.png", "assets/huntress/run.png"],
+        View {
+            x: 55,
+            y: 53,
+            width: 40,
+            height: 50,
+        },
+    ));
+    let apple_sprite = sprite_registry.insert(SpriteData::load("apple", vec!["assets/apple.png"]));
+    let ashberry_sprite =
+        sprite_registry.insert(SpriteData::load("ashberry", vec!["assets/ashberry.png"]));
+    let baobab_sprite =
+        sprite_registry.insert(SpriteData::load("baobab", vec!["assets/baobab.png"]));
+    let beech_sprite = sprite_registry.insert(SpriteData::load("beech", vec!["assets/beech.png"]));
+    let dark_block_sprite = sprite_registry.insert(SpriteData::load("dark_block", vec![
+        "assets/dark_block.png",
+    ]));
 
     let anim_timeline = AnimTimeline::new(
         vec![
@@ -163,7 +167,7 @@ fn main() {
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
         KeyboardInput(None),
-        Sprite::new("player"),
+        Sprite::new(player_sprite),
         anim_timeline,
         Input::None,
         PlayerState::Idle(Instant::now()),
@@ -175,7 +179,7 @@ fn main() {
         Position(Vec3::new(-2.0, 0.0, 20.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
-        Sprite::new("apple"),
+        Sprite::new(apple_sprite),
         Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
         Terrain,
     );
@@ -184,7 +188,7 @@ fn main() {
         Position(Vec3::new(2.0, 0.0, 20.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
-        Sprite::new("ashberry"),
+        Sprite::new(ashberry_sprite),
         Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
         Terrain,
     );
@@ -193,7 +197,7 @@ fn main() {
         Position(Vec3::new(3.0, 0.0, 55.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
-        Sprite::new("baobab"),
+        Sprite::new(baobab_sprite),
         Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
         Terrain,
     );
@@ -202,7 +206,7 @@ fn main() {
         Position(Vec3::new(-3.5, 0.0, 95.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
-        Sprite::new("beech"),
+        Sprite::new(beech_sprite),
         Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
         Terrain,
     );
@@ -214,14 +218,14 @@ fn main() {
     parallax_demo.spawn(beech);
     parallax_demo.spawn(camera);
 
-    parallax_demo.spawn_batch(floor());
+    parallax_demo.spawn_batch(floor(dark_block_sprite));
 
     parallax_demo.add_system(&process_keyboard_input);
     parallax_demo.add_system(&apply_input_to_player);
     parallax_demo.add_system(&update_camera_position);
     parallax_demo.add_system(&update_animation_state);
 
-    app.run(event_loop, parallax_demo, sprite_assets);
+    app.run(event_loop, parallax_demo, sprite_registry);
 }
 
 fn process_keyboard_input(world: &World, _dt: Duration, _instant: Instant) {
@@ -322,14 +326,14 @@ fn update_animation_state(world: &World, _dt: Duration, instant: Instant) {
     }
 }
 
-fn floor() -> Vec<(Position, Rotation, Scale, Sprite, Collider, Terrain)> {
+fn floor(sprite_id: SpriteId) -> Vec<(Position, Rotation, Scale, Sprite, Collider, Terrain)> {
     (-5..5)
         .map(|i| {
             (
                 Position(Vec3::new(1.0 * i as f32, -1.0, 20.0)),
                 Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
                 Scale(1),
-                Sprite::new("dark_block"),
+                Sprite::new(sprite_id),
                 Collider(Cuboid::new(Vector2::new(0.5, 0.5))),
                 Terrain,
             )

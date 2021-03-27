@@ -1,5 +1,29 @@
 use image::{GenericImage, RgbaImage};
 
+pub type SpriteId = usize;
+
+pub struct SpriteRegistry(Vec<SpriteData>);
+
+impl SpriteRegistry {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+
+    pub fn insert(&mut self, data: SpriteData) -> SpriteId {
+        self.0.push(data);
+        self.0.len() - 1
+    }
+}
+
+impl IntoIterator for SpriteRegistry {
+    type Item = SpriteData;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 pub struct SpriteData {
     pub id: String,
     pub frames: Vec<RgbaImage>,

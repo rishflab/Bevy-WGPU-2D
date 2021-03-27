@@ -1,5 +1,6 @@
 #![feature(in_band_lifetimes)]
 
+use crate::asset::SpriteId;
 use crate::sprite::Sprite;
 use crate::{
     camera::{ActiveCamera, Camera, ParallaxCamera},
@@ -11,10 +12,7 @@ use hecs::{Bundle, DynamicBundle, Entity, SpawnBatchIter, World};
 use renderer::gpu_primitives::{Instance, InstanceRaw};
 use renderer::scene::Scene;
 pub use renderer::TEXTURE_ARRAY_SIZE;
-use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 use winit::event::WindowEvent;
 
 pub mod app;
@@ -66,7 +64,7 @@ impl<'a> Game<'a> {
         self.systems.push(system)
     }
     fn build_scene(&mut self) -> Scene {
-        let mut sprites: HashMap<String, Vec<InstanceRaw>> = HashMap::default();
+        let mut sprites: Vec<(SpriteId, InstanceRaw)> = vec![];
 
         for (_, (pos, rot, scale, sprite)) in &mut self
             .world
@@ -78,15 +76,10 @@ impl<'a> Game<'a> {
                 scale: Vec3::splat(scale.0 as f32),
                 frame_id: sprite.frame_id,
             });
-            if let Some(instances) = sprites.get(&sprite.id) {
-                // TODO: try and remove these clones
-                let mut new = instances.clone();
-                new.push(instance_raw);
-                sprites.insert(sprite.id.clone(), new);
-            } else {
-                sprites.insert(sprite.id.clone(), vec![instance_raw]);
-            }
+
+            sprites.push((sprite.id, instance_raw))
         }
+
         let mut colliders: Vec<InstanceRaw> = vec![];
 
         for (_, (pos, rot, collider)) in &mut self

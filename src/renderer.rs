@@ -7,7 +7,7 @@ use scene::Scene;
 use sprite::{DrawSprite, Sprite};
 use texture::DepthTexture;
 
-use crate::asset::SpriteData;
+use crate::asset::SpriteRegistry;
 use crate::renderer::hitbox::{DrawHitbox, Hitbox};
 
 pub mod gpu_primitives;
@@ -33,7 +33,7 @@ impl Renderer {
         sc_desc: &wgpu::SwapChainDescriptor,
         device: &mut wgpu::Device,
         queue: &wgpu::Queue,
-        sprite_assets: Vec<SpriteData>,
+        sprite_registry: SpriteRegistry,
     ) -> Self {
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -98,12 +98,11 @@ impl Renderer {
 
         let mut sprites = vec![];
 
-        for asset in sprite_assets {
+        for asset in sprite_registry {
             sprites.push(Sprite::new(
                 device,
                 queue,
                 &sprite_bind_group_layout,
-                asset.id,
                 asset.frames,
             ));
         }
@@ -232,10 +231,14 @@ impl Renderer {
         self.hitbox
             .update_instance_buffer(scene.hitbox_instances.clone(), queue);
 
-        for sprite in self.sprites.iter_mut() {
-            if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
-                sprite.update_instance_buffer(instances.clone(), queue);
-            }
+        for (id, sprite) in self.sprites.iter_mut().enumerate() {
+            let instances = scene
+                .sprite_instances
+                .iter()
+                .filter(|(i, _)| *i == id)
+                .map(|(_, instance)| *instance)
+                .collect();
+            sprite.update_instance_buffer(instances, queue);
         }
 
         let mut encoder =
@@ -268,10 +271,15 @@ impl Renderer {
 
             rpass.set_pipeline(&self.sprite_pipeline);
 
-            for sprite in self.sprites.iter() {
-                if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
-                    rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
-                }
+            for (id, sprite) in self.sprites.iter_mut().enumerate() {
+                let instances = scene
+                    .sprite_instances
+                    .iter()
+                    .filter(|(i, _)| *i == id)
+                    .map(|(_, instance)| *instance)
+                    .collect::<Vec<InstanceRaw>>();
+
+                rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
             }
 
             rpass.set_pipeline(&self.hitbox_pipeline);

@@ -11,7 +11,6 @@ pub const MAX_INSTANCES: u64 = 1024;
 pub const PIXELS_PER_METRE: u32 = 32;
 
 pub struct Sprite {
-    pub id: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub instance_buffer: wgpu::Buffer,
@@ -24,7 +23,6 @@ impl Sprite {
         device: &mut wgpu::Device,
         queue: &wgpu::Queue,
         sprite_bind_group_layout: &wgpu::BindGroupLayout,
-        id: String,
         frames: Vec<RgbaImage>,
     ) -> Self {
         let image = frames
@@ -101,7 +99,6 @@ impl Sprite {
             instance_buffer,
             bind_group,
             num_indices: index_data.len() as u32,
-            id,
         }
     }
 

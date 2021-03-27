@@ -9,7 +9,7 @@ pub struct KeyFrame {
 }
 
 pub struct Sprite {
-    pub id: String,
+    pub id: usize,
     pub frame_id: u8,
 }
 
@@ -40,10 +40,7 @@ impl AnimTimeline {
 }
 
 impl Sprite {
-    pub fn new(id: &str) -> Self {
-        Self {
-            id: id.to_string(),
-            frame_id: 0,
-        }
+    pub fn new(id: usize) -> Self {
+        Self { id, frame_id: 0 }
     }
 }
