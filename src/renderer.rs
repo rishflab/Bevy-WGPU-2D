@@ -20,7 +20,7 @@ pub const TEXTURE_ARRAY_SIZE: usize = 128;
 
 pub struct Renderer {
     sprites: Vec<Sprite>,
-    hitboxes: Vec<Hitbox>,
+    hitbox: Hitbox,
     uniform_buffer: wgpu::Buffer,
     sprite_pipeline: wgpu::RenderPipeline,
     hitbox_pipeline: wgpu::RenderPipeline,
@@ -211,7 +211,7 @@ impl Renderer {
             sprites,
             depth_texture,
             uniform_bind_group,
-            hitboxes: vec![Hitbox::new(device, "cuboid".to_string())],
+            hitbox: Hitbox::new(device),
         }
     }
 
@@ -229,11 +229,8 @@ impl Renderer {
             bytemuck::bytes_of(&scene.camera_uniform),
         );
 
-        for hitbox in self.hitboxes.iter_mut() {
-            if let Some(instances) = scene.hitbox_instances.get(&hitbox.id) {
-                hitbox.update_instance_buffer(instances.clone(), queue);
-            }
-        }
+        self.hitbox
+            .update_instance_buffer(scene.hitbox_instances.clone(), queue);
 
         for sprite in self.sprites.iter_mut() {
             if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
@@ -286,11 +283,11 @@ impl Renderer {
             // &self.uniform_bind_group);     }
             // }
 
-            for hitbox in self.hitboxes.iter() {
-                if let Some(instances) = scene.hitbox_instances.get(&hitbox.id) {
-                    rpass.draw_hitbox(hitbox, 0..instances.len() as u32, &self.uniform_bind_group);
-                }
-            }
+            rpass.draw_hitbox(
+                &self.hitbox,
+                0..scene.hitbox_instances.len() as u32,
+                &self.uniform_bind_group,
+            );
         }
 
         queue.submit(Some(encoder.finish()));

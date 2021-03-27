@@ -87,11 +87,12 @@ impl<'a> Game<'a> {
                 sprites.insert(sprite.id.clone(), vec![instance_raw]);
             }
         }
-        let mut colliders: HashMap<String, Vec<InstanceRaw>> = HashMap::default();
-        let collider_id = "cuboid".to_string();
+        let mut colliders: Vec<InstanceRaw> = vec![];
 
-        for (_, (pos, rot, collider)) in
-            &mut self.world.query::<(&Position, &Rotation, &Collider)>()
+        for (_, (pos, rot, collider)) in &mut self
+            .world
+            .query_mut::<(&Position, &Rotation, &Collider)>()
+            .into_iter()
         {
             let instance_raw = InstanceRaw::from(Instance {
                 position: pos.0,
@@ -103,14 +104,8 @@ impl<'a> Game<'a> {
                 ),
                 frame_id: 0,
             });
-            if let Some(instances) = colliders.get(&collider_id) {
-                // TODO: try and remove these clones
-                let mut new = instances.clone();
-                new.push(instance_raw);
-                colliders.insert(collider_id.clone(), new);
-            } else {
-                colliders.insert(collider_id.clone(), vec![instance_raw]);
-            }
+
+            colliders.push(instance_raw);
         }
 
         let mut q = self.world.query::<(&ActiveCamera, &ParallaxCamera)>();

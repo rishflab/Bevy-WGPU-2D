@@ -5,7 +5,6 @@ use wgpu::util::DeviceExt;
 pub const MAX_INSTANCES: u64 = 1024;
 
 pub struct Hitbox {
-    pub id: String,
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
     pub instance_buffer: wgpu::Buffer,
@@ -13,7 +12,7 @@ pub struct Hitbox {
 }
 
 impl Hitbox {
-    pub fn new(device: &mut wgpu::Device, id: String) -> Self {
+    pub fn new(device: &mut wgpu::Device) -> Self {
         let (vertex_data, index_data) = create_vertices();
 
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -41,7 +40,6 @@ impl Hitbox {
             index_buffer,
             instance_buffer,
             num_indices: index_data.len() as u32,
-            id,
         }
     }
 
