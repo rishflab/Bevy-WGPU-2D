@@ -149,7 +149,7 @@ impl Renderer {
                 }],
             }),
             primitive: wgpu::PrimitiveState {
-                cull_mode: wgpu::CullMode::Back,
+                cull_mode: wgpu::CullMode::None,
                 ..Default::default()
             },
             depth_stencil: Some(wgpu::DepthStencilState {
