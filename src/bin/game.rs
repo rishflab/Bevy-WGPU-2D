@@ -1,5 +1,4 @@
 #![allow(clippy::single_match)]
-#![feature(or_patterns)]
 extern crate erlking;
 
 use erlking::asset::{load_anim_timeline, SpriteId, SpriteRegistry, View};
@@ -66,9 +65,10 @@ fn main() {
     let baobab_sprite =
         sprite_registry.insert(SpriteData::load("baobab", vec!["assets/baobab.png"]));
     let beech_sprite = sprite_registry.insert(SpriteData::load("beech", vec!["assets/beech.png"]));
-    let dark_block_sprite = sprite_registry.insert(SpriteData::load("dark_block", vec![
-        "assets/dark_block.png",
-    ]));
+    let dark_block_sprite = sprite_registry.insert(SpriteData::load(
+        "dark_block",
+        vec!["assets/dark_block.png"],
+    ));
 
     let anim_timeline = load_anim_timeline("assets/huntress/keyframes.json");
 
