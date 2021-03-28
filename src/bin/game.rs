@@ -2,7 +2,7 @@
 extern crate erlking;
 
 use erlking::asset::{load_anim_timeline, SpriteId, SpriteRegistry, View};
-use erlking::input::{Command, KeyState};
+use erlking::input::KeyState;
 use erlking::sprite::{AnimTimeline, Sprite};
 use erlking::{
     asset::SpriteData,
@@ -25,6 +25,12 @@ struct Terrain;
 enum PlayerState {
     Idle(Instant),
     Run(Instant),
+}
+
+pub enum Command {
+    Left,
+    Right,
+    None,
 }
 
 impl PlayerState {

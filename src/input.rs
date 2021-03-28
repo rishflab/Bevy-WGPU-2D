@@ -1,11 +1,5 @@
 use winit::event::{ElementState, KeyboardInput, VirtualKeyCode};
 
-pub enum Command {
-    Left,
-    Right,
-    None,
-}
-
 #[derive(Debug, Default, Copy, Clone)]
 pub struct KeyState {
     pub left: bool,
