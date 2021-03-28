@@ -159,8 +159,6 @@ fn apply_command_to_player(world: &World, res: Resources) {
         &Collider,
     )>();
 
-    let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
-
     for (_, (state, input, player_pos, speed, collider)) in q.iter() {
         let dx = Vec3::new(speed.0 * res.dt.as_secs_f32(), 0.0, 0.0);
 
@@ -184,6 +182,8 @@ fn apply_command_to_player(world: &World, res: Resources) {
                 None
             }
         };
+
+        let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
 
         if let Some(pos) = new_pos {
             let collisions = terrain
