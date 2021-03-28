@@ -2,8 +2,8 @@
 #![feature(or_patterns)]
 extern crate erlking;
 
-use erlking::asset::{SpriteId, SpriteRegistry, View};
-use erlking::sprite::{AnimTimeline, KeyFrame, Sprite};
+use erlking::asset::{load_anim_timeline, SpriteId, SpriteRegistry, View};
+use erlking::sprite::{AnimTimeline, Sprite};
 use erlking::{
     asset::SpriteData,
     camera::{ActiveCamera, ParallaxCamera},
@@ -79,75 +79,7 @@ fn main() {
         "assets/dark_block.png",
     ]));
 
-    let anim_timeline = AnimTimeline::new(
-        vec![
-            KeyFrame {
-                index: 0,
-                time: 0.0,
-            },
-            KeyFrame {
-                index: 1,
-                time: 0.1,
-            },
-            KeyFrame {
-                index: 2,
-                time: 0.2,
-            },
-            KeyFrame {
-                index: 3,
-                time: 0.3,
-            },
-            KeyFrame {
-                index: 4,
-                time: 0.4,
-            },
-            KeyFrame {
-                index: 5,
-                time: 0.5,
-            },
-            KeyFrame {
-                index: 6,
-                time: 0.6,
-            },
-            KeyFrame {
-                index: 7,
-                time: 0.7,
-            },
-            KeyFrame {
-                index: 8,
-                time: 0.0,
-            },
-            KeyFrame {
-                index: 9,
-                time: 0.1,
-            },
-            KeyFrame {
-                index: 10,
-                time: 0.2,
-            },
-            KeyFrame {
-                index: 11,
-                time: 0.3,
-            },
-            KeyFrame {
-                index: 12,
-                time: 0.4,
-            },
-            KeyFrame {
-                index: 13,
-                time: 0.5,
-            },
-            KeyFrame {
-                index: 14,
-                time: 0.6,
-            },
-            KeyFrame {
-                index: 15,
-                time: 0.7,
-            },
-        ]
-        .into_iter(),
-    );
+    let anim_timeline = load_anim_timeline("assets/huntress/keyframes.json");
 
     let movespeed = MoveSpeed(10.0);
 
