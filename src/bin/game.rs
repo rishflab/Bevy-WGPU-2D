@@ -3,32 +3,23 @@
 extern crate erlking;
 
 use erlking::asset::{load_anim_timeline, SpriteId, SpriteRegistry, View};
+use erlking::input::{Command, KeyState};
 use erlking::sprite::{AnimTimeline, Sprite};
 use erlking::{
     asset::SpriteData,
     camera::{ActiveCamera, ParallaxCamera},
-    App, Collider, Game, KeyboardInput, Position, Rotation, Scale,
+    App, Collider, Game, Position, Resources, Rotation, Scale,
 };
 use glam::{Quat, Vec3};
 use hecs::World;
 use parry2d::math::Isometry;
 use parry2d::na::Vector2;
 use parry2d::shape::Cuboid;
-use std::time::{Duration, Instant};
-use winit::{
-    event::{ElementState, VirtualKeyCode},
-    event_loop::EventLoop,
-};
+use std::time::Instant;
+use winit::event_loop::EventLoop;
 
 #[derive(Clone, Copy)]
 struct MoveSpeed(f32);
-
-#[derive(Debug, Copy, Clone)]
-enum Input {
-    Left,
-    Right,
-    None,
-}
 
 struct Terrain;
 
@@ -98,10 +89,9 @@ fn main() {
         Position(Vec3::new(0.0, 0.2, 20.0)),
         Rotation(Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0)),
         Scale(1),
-        KeyboardInput(None),
         Sprite::new(player_sprite),
         anim_timeline,
-        Input::None,
+        Command::None,
         PlayerState::Idle(Instant::now()),
         Collider(Cuboid::new(Vector2::new(0.4, 0.6))),
         movespeed,
@@ -152,42 +142,18 @@ fn main() {
 
     parallax_demo.spawn_batch(floor(dark_block_sprite));
 
-    parallax_demo.add_system(&process_keyboard_input);
-    parallax_demo.add_system(&apply_input_to_player);
+    parallax_demo.add_system(&get_command_from_keystate);
+    parallax_demo.add_system(&apply_command_to_player);
     parallax_demo.add_system(&update_camera_position);
     parallax_demo.add_system(&update_animation_state);
 
     app.run(event_loop, parallax_demo, sprite_registry);
 }
 
-fn process_keyboard_input(world: &World, _dt: Duration, _instant: Instant) {
-    let mut q = world.query::<(&KeyboardInput, &mut Input)>();
-
-    for (_, (key, command)) in q.iter() {
-        if let Some(input) = key.0 {
-            match input {
-                winit::event::KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::Left),
-                    ..
-                } => *command = Input::Left,
-                winit::event::KeyboardInput {
-                    state: ElementState::Pressed,
-                    virtual_keycode: Some(VirtualKeyCode::Right),
-                    ..
-                } => *command = Input::Right,
-                _ => *command = Input::None,
-            }
-        } else {
-            *command = Input::None;
-        }
-    }
-}
-
-fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
+fn apply_command_to_player(world: &World, res: Resources) {
     let mut q = world.query::<(
         &mut PlayerState,
-        &mut Input,
+        &mut Command,
         &mut Position,
         &MoveSpeed,
         &Collider,
@@ -196,25 +162,25 @@ fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
     let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
 
     for (_, (state, input, player_pos, speed, collider)) in q.iter() {
-        let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
+        let dx = Vec3::new(speed.0 * res.dt.as_secs_f32(), 0.0, 0.0);
 
         let new_pos = match input {
-            Input::Left => {
+            Command::Left => {
                 match state {
-                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
-                    _ => (),
-                }
-                Some(player_pos.0 + dx)
-            }
-            Input::Right => {
-                match state {
-                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
+                    PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
                     _ => (),
                 }
                 Some(player_pos.0 - dx)
             }
+            Command::Right => {
+                match state {
+                    PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
+                    _ => (),
+                }
+                Some(player_pos.0 + dx)
+            }
             _ => {
-                *state = PlayerState::Idle(instant);
+                *state = PlayerState::Idle(res.now);
                 None
             }
         };
@@ -240,7 +206,7 @@ fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
     }
 }
 
-fn update_camera_position(world: &World, _dt: Duration, _instant: Instant) {
+fn update_camera_position(world: &World, _res: Resources) {
     if let Some((_, (_, pos))) = world.query::<(&PlayerState, &mut Position)>().iter().next() {
         let mut q = world.query::<(&ActiveCamera, &mut ParallaxCamera)>();
 
@@ -250,11 +216,11 @@ fn update_camera_position(world: &World, _dt: Duration, _instant: Instant) {
     }
 }
 
-fn update_animation_state(world: &World, _dt: Duration, instant: Instant) {
+fn update_animation_state(world: &World, res: Resources) {
     let mut q = world.query::<(&PlayerState, &mut Sprite, &AnimTimeline)>();
 
     for (_, (state, sprite, timeline)) in q.iter() {
-        sprite.frame_id = state.animation_state(instant, timeline);
+        sprite.frame_id = state.animation_state(res.now, timeline);
     }
 }
 
@@ -271,4 +237,30 @@ fn floor(sprite_id: SpriteId) -> Vec<(Position, Rotation, Scale, Sprite, Collide
             )
         })
         .collect()
+}
+
+pub fn get_command_from_keystate(world: &World, res: Resources) {
+    let mut q = world.query::<&mut Command>();
+
+    for (_, command) in q.iter() {
+        let next = match res.key_state {
+            KeyState {
+                left: true,
+                right: false,
+                ..
+            } => Command::Left,
+            KeyState {
+                left: false,
+                right: true,
+                ..
+            } => Command::Right,
+            KeyState {
+                left: true,
+                right: true,
+                ..
+            } => Command::Right,
+            _ => Command::None,
+        };
+        *command = next;
+    }
 }

@@ -125,7 +125,7 @@ impl App {
                     | WindowEvent::CloseRequested => {
                         *control_flow = ControlFlow::Exit;
                     }
-                    _ => game.capture_input(event),
+                    _ => game.capture_input_event(event),
                 },
                 event::Event::RedrawRequested(_) => {
                     let frame = match swap_chain.get_current_frame() {

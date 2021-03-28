@@ -1,10 +1,7 @@
-use std::f32;
-
-use glam::{Mat4, Vec3, Vec4};
-
 use crate::app::WINDOW_SIZE;
 use crate::renderer::gpu_primitives::CameraUniform;
 use crate::renderer::sprite::PIXELS_PER_METRE;
+use glam::{Mat4, Vec3, Vec4};
 
 pub struct ActiveCamera;
 

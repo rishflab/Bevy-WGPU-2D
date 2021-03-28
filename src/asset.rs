@@ -93,3 +93,9 @@ pub fn load_anim_timeline(file: &str) -> AnimTimeline {
     let deserialized: AnimTimeline = serde_json::from_str(&s).unwrap();
     deserialized
 }
+
+impl Default for SpriteRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -1,6 +1,7 @@
 #![feature(in_band_lifetimes)]
 
 use crate::asset::SpriteId;
+use crate::input::KeyState;
 use crate::sprite::Sprite;
 use crate::{
     camera::{ActiveCamera, Camera, ParallaxCamera},
@@ -18,6 +19,7 @@ use winit::event::WindowEvent;
 pub mod app;
 pub mod asset;
 pub mod camera;
+pub mod input;
 mod renderer;
 pub mod sprite;
 mod time;
@@ -25,13 +27,19 @@ mod time;
 pub struct Position(pub Vec3);
 pub struct Rotation(pub Quat);
 pub struct Scale(pub u8);
-pub struct KeyboardInput(pub Option<winit::event::KeyboardInput>);
 pub struct Collider(pub parry2d::shape::Cuboid);
+
+pub struct Resources {
+    pub now: Instant,
+    pub dt: Duration,
+    pub key_state: KeyState,
+}
 
 pub struct Game<'a> {
     world: World,
     timer: Timer,
-    systems: Vec<&'a dyn Fn(&World, Duration, Instant)>,
+    systems: Vec<&'a dyn Fn(&World, Resources)>,
+    key_state: KeyState,
 }
 
 impl<'a> Game<'a> {
@@ -40,12 +48,17 @@ impl<'a> Game<'a> {
             world: Default::default(),
             timer: Default::default(),
             systems: vec![],
+            key_state: Default::default(),
         }
     }
     fn run(&mut self) -> Scene {
         self.timer.tick();
         for system in self.systems.iter() {
-            system(&self.world, self.timer.elapsed(), self.timer.now())
+            system(&self.world, Resources {
+                dt: self.timer.elapsed(),
+                now: self.timer.now(),
+                key_state: self.key_state,
+            })
         }
         self.build_scene()
     }
@@ -60,7 +73,7 @@ impl<'a> Game<'a> {
         self.world.spawn_batch(iter)
     }
 
-    pub fn add_system(&mut self, system: &'a dyn Fn(&World, Duration, Instant)) {
+    pub fn add_system(&mut self, system: &'a dyn Fn(&World, Resources)) {
         self.systems.push(system)
     }
     fn build_scene(&mut self) -> Scene {
@@ -111,15 +124,9 @@ impl<'a> Game<'a> {
             hitbox_instances: colliders,
         }
     }
-    fn capture_input(&self, event: winit::event::WindowEvent) {
-        let mut q = self.world.query::<&mut KeyboardInput>();
-        for (_, mut key) in q.iter() {
-            // ignore non keyboard input
-            if let WindowEvent::KeyboardInput { input, .. } = event {
-                key.0 = Some(input);
-            } else {
-                key.0 = None;
-            }
+    fn capture_input_event(&mut self, event: winit::event::WindowEvent) {
+        if let WindowEvent::KeyboardInput { input, .. } = event {
+            self.key_state.update(input);
         }
     }
 }
