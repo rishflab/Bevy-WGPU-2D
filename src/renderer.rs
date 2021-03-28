@@ -271,7 +271,7 @@ impl Renderer {
 
             rpass.set_pipeline(&self.sprite_pipeline);
 
-            for (id, sprite) in self.sprites.iter_mut().enumerate() {
+            for (id, sprite) in self.sprites.iter().enumerate() {
                 let instance_count = scene
                     .sprite_instances
                     .iter()
@@ -283,12 +283,16 @@ impl Renderer {
 
             rpass.set_pipeline(&self.hitbox_pipeline);
 
-            // // render sprite outlines
-            // for sprite in self.sprites.iter() {
-            //     if let Some(instances) = scene.sprite_instances.get(&sprite.id) {
-            //         rpass.draw_sprite(sprite, 0..instances.len() as u32,
-            // &self.uniform_bind_group);     }
-            // }
+            #[cfg(feature = "sprite-debug")]
+            for (id, sprite) in self.sprites.iter().enumerate() {
+                let instance_count = scene
+                    .sprite_instances
+                    .iter()
+                    .filter(|(i, _)| *i == id)
+                    .count();
+
+                rpass.draw_sprite(sprite, 0..instance_count as u32, &self.uniform_bind_group);
+            }
 
             rpass.draw_hitbox(
                 &self.hitbox,
