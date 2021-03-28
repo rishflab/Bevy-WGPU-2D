@@ -1,4 +1,8 @@
+use crate::sprite::AnimTimeline;
 use image::{GenericImage, RgbaImage};
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
 
 pub type SpriteId = usize;
 
@@ -22,6 +26,13 @@ impl IntoIterator for SpriteRegistry {
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
+}
+
+pub struct View {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }
 
 pub struct SpriteData {
@@ -71,9 +82,14 @@ impl SpriteData {
     }
 }
 
-pub struct View {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
+pub fn load_anim_timeline(file: &str) -> AnimTimeline {
+    let path = Path::new(file);
+
+    let mut file = File::open(&path).unwrap();
+
+    let mut s = String::new();
+    file.read_to_string(&mut s).unwrap();
+
+    let deserialized: AnimTimeline = serde_json::from_str(&s).unwrap();
+    deserialized
 }

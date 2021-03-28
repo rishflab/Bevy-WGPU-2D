@@ -1,8 +1,9 @@
 use crate::TEXTURE_ARRAY_SIZE;
 use arrayvec::ArrayVec;
+use serde::Deserialize;
 use std::ops::Range;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Deserialize, Debug, Copy, Clone)]
 pub struct KeyFrame {
     pub index: u8,
     pub time: f32,
@@ -13,12 +14,12 @@ pub struct Sprite {
     pub frame_id: u8,
 }
 
-#[derive(Debug, Clone)]
-pub struct AnimTimeline(pub ArrayVec<[KeyFrame; TEXTURE_ARRAY_SIZE]>);
+#[derive(Deserialize, Debug, Clone)]
+pub struct AnimTimeline(pub ArrayVec<KeyFrame, TEXTURE_ARRAY_SIZE>);
 
 impl AnimTimeline {
     pub fn new(key_frames: impl Iterator<Item = KeyFrame>) -> Self {
-        let mut vec = ArrayVec::<[KeyFrame; TEXTURE_ARRAY_SIZE]>::new();
+        let mut vec = ArrayVec::<KeyFrame, TEXTURE_ARRAY_SIZE>::new();
 
         for (i, k) in key_frames.enumerate() {
             vec.insert(i, k);
