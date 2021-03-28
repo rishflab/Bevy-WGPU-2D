@@ -23,7 +23,7 @@ impl KeyState {
     pub fn update(&mut self, input: KeyboardInput) {
         self.last_pressed = input.virtual_keycode;
         match input {
-            winit::event::KeyboardInput {
+            KeyboardInput {
                 state,
                 virtual_keycode: Some(VirtualKeyCode::Left),
                 ..
@@ -31,7 +31,7 @@ impl KeyState {
                 ElementState::Pressed => self.left = true,
                 ElementState::Released => self.left = false,
             },
-            winit::event::KeyboardInput {
+            KeyboardInput {
                 state,
                 virtual_keycode: Some(VirtualKeyCode::Right),
                 ..
