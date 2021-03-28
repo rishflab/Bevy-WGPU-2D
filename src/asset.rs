@@ -24,6 +24,13 @@ impl IntoIterator for SpriteRegistry {
     }
 }
 
+pub struct View {
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
 pub struct SpriteData {
     pub id: String,
     pub frames: Vec<RgbaImage>,
@@ -69,11 +76,4 @@ impl SpriteData {
             frames,
         }
     }
-}
-
-pub struct View {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
 }
