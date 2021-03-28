@@ -272,14 +272,13 @@ impl Renderer {
             rpass.set_pipeline(&self.sprite_pipeline);
 
             for (id, sprite) in self.sprites.iter_mut().enumerate() {
-                let instances = scene
+                let instance_count = scene
                     .sprite_instances
                     .iter()
                     .filter(|(i, _)| *i == id)
-                    .map(|(_, instance)| *instance)
-                    .collect::<Vec<InstanceRaw>>();
+                    .count();
 
-                rpass.draw_sprite(sprite, 0..instances.len() as u32, &self.uniform_bind_group);
+                rpass.draw_sprite(sprite, 0..instance_count as u32, &self.uniform_bind_group);
             }
 
             rpass.set_pipeline(&self.hitbox_pipeline);
