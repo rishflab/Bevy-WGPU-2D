@@ -7,14 +7,14 @@ use erlking::sprite::{AnimTimeline, Sprite};
 use erlking::{
     asset::SpriteData,
     camera::{ActiveCamera, ParallaxCamera},
-    App, Collider, Game, KeyboardInput, Position, Rotation, Scale,
+    App, Collider, Game, KeyboardInput, Position, Resources, Rotation, Scale,
 };
 use glam::{Quat, Vec3};
 use hecs::World;
 use parry2d::math::Isometry;
 use parry2d::na::Vector2;
 use parry2d::shape::Cuboid;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use winit::{
     event::{ElementState, VirtualKeyCode},
     event_loop::EventLoop,
@@ -160,7 +160,7 @@ fn main() {
     app.run(event_loop, parallax_demo, sprite_registry);
 }
 
-fn process_keyboard_input(world: &World, _dt: Duration, _instant: Instant) {
+fn process_keyboard_input(world: &World, _res: Resources) {
     let mut q = world.query::<(&KeyboardInput, &mut Input)>();
 
     for (_, (key, command)) in q.iter() {
@@ -184,7 +184,7 @@ fn process_keyboard_input(world: &World, _dt: Duration, _instant: Instant) {
     }
 }
 
-fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
+fn apply_input_to_player(world: &World, res: Resources) {
     let mut q = world.query::<(
         &mut PlayerState,
         &mut Input,
@@ -196,25 +196,25 @@ fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
     let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
 
     for (_, (state, input, player_pos, speed, collider)) in q.iter() {
-        let dx = Vec3::new(speed.0 * dt.as_secs_f32(), 0.0, 0.0);
+        let dx = Vec3::new(speed.0 * res.dt.as_secs_f32(), 0.0, 0.0);
 
         let new_pos = match input {
             Input::Left => {
                 match state {
-                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
+                    PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
                     _ => (),
                 }
                 Some(player_pos.0 + dx)
             }
             Input::Right => {
                 match state {
-                    PlayerState::Idle(_) => *state = PlayerState::Run(instant),
+                    PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
                     _ => (),
                 }
                 Some(player_pos.0 - dx)
             }
             _ => {
-                *state = PlayerState::Idle(instant);
+                *state = PlayerState::Idle(res.now);
                 None
             }
         };
@@ -240,7 +240,7 @@ fn apply_input_to_player(world: &World, dt: Duration, instant: Instant) {
     }
 }
 
-fn update_camera_position(world: &World, _dt: Duration, _instant: Instant) {
+fn update_camera_position(world: &World, _res: Resources) {
     if let Some((_, (_, pos))) = world.query::<(&PlayerState, &mut Position)>().iter().next() {
         let mut q = world.query::<(&ActiveCamera, &mut ParallaxCamera)>();
 
@@ -250,11 +250,11 @@ fn update_camera_position(world: &World, _dt: Duration, _instant: Instant) {
     }
 }
 
-fn update_animation_state(world: &World, _dt: Duration, instant: Instant) {
+fn update_animation_state(world: &World, res: Resources) {
     let mut q = world.query::<(&PlayerState, &mut Sprite, &AnimTimeline)>();
 
     for (_, (state, sprite, timeline)) in q.iter() {
-        sprite.frame_id = state.animation_state(instant, timeline);
+        sprite.frame_id = state.animation_state(res.now, timeline);
     }
 }
 

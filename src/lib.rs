@@ -28,10 +28,15 @@ pub struct Scale(pub u8);
 pub struct KeyboardInput(pub Option<winit::event::KeyboardInput>);
 pub struct Collider(pub parry2d::shape::Cuboid);
 
+pub struct Resources {
+    pub now: Instant,
+    pub dt: Duration,
+}
+
 pub struct Game<'a> {
     world: World,
     timer: Timer,
-    systems: Vec<&'a dyn Fn(&World, Duration, Instant)>,
+    systems: Vec<&'a dyn Fn(&World, Resources)>,
 }
 
 impl<'a> Game<'a> {
@@ -45,7 +50,10 @@ impl<'a> Game<'a> {
     fn run(&mut self) -> Scene {
         self.timer.tick();
         for system in self.systems.iter() {
-            system(&self.world, self.timer.elapsed(), self.timer.now())
+            system(&self.world, Resources {
+                dt: self.timer.elapsed(),
+                now: self.timer.now(),
+            })
         }
         self.build_scene()
     }
@@ -60,7 +68,7 @@ impl<'a> Game<'a> {
         self.world.spawn_batch(iter)
     }
 
-    pub fn add_system(&mut self, system: &'a dyn Fn(&World, Duration, Instant)) {
+    pub fn add_system(&mut self, system: &'a dyn Fn(&World, Resources)) {
         self.systems.push(system)
     }
     fn build_scene(&mut self) -> Scene {
