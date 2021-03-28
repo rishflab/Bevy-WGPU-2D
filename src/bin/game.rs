@@ -184,8 +184,11 @@ fn apply_command_to_player(world: &World, res: Resources) {
                     Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0),
                 ))
             }
-            _ => {
-                *state = PlayerState::Idle(res.now);
+            Command::None => {
+                match state {
+                    PlayerState::Run(_) => *state = PlayerState::Idle(res.now),
+                    _ => (),
+                }
                 None
             }
         };
