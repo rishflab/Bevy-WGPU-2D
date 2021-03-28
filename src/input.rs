@@ -6,26 +6,18 @@ pub enum Command {
     None,
 }
 
-pub type IsDown = bool;
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct KeyState {
-    pub left: IsDown,
-    pub right: IsDown,
-    pub up: IsDown,
-    pub down: IsDown,
+    pub left: bool,
+    pub right: bool,
+    pub up: bool,
+    pub down: bool,
     pub last_pressed: Option<VirtualKeyCode>,
 }
 
 impl KeyState {
     pub fn new() -> Self {
-        KeyState {
-            left: false,
-            right: false,
-            up: false,
-            down: false,
-            last_pressed: None,
-        }
+        Default::default()
     }
 
     pub fn update(&mut self, input: KeyboardInput) {
@@ -52,8 +44,3 @@ impl KeyState {
     }
 }
 
-impl Default for KeyState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
