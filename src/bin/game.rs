@@ -155,34 +155,29 @@ fn apply_command_to_player(world: &World, res: Resources) {
         &mut PlayerState,
         &mut Command,
         &mut Position,
-        &mut Rotation,
         &MoveSpeed,
         &Collider,
     )>();
 
-    for (_, (state, input, pos, rot, speed, player_collider)) in q.iter() {
+    let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
+
+    for (_, (state, input, player_pos, speed, collider)) in q.iter() {
         let dx = Vec3::new(speed.0 * res.dt.as_secs_f32(), 0.0, 0.0);
 
-        let new = match input {
+        let new_pos = match input {
             Command::Left => {
                 match state {
                     PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
                     _ => (),
                 }
-                Some((
-                    pos.0 - dx,
-                    Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 180.0_f32.to_radians()),
-                ))
+                Some(player_pos.0 - dx)
             }
             Command::Right => {
                 match state {
                     PlayerState::Idle(_) => *state = PlayerState::Run(res.now),
                     _ => (),
                 }
-                Some((
-                    pos.0 + dx,
-                    Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 0.0),
-                ))
+                Some(player_pos.0 + dx)
             }
             _ => {
                 *state = PlayerState::Idle(res.now);
@@ -190,25 +185,22 @@ fn apply_command_to_player(world: &World, res: Resources) {
             }
         };
 
-        let mut terrain = world.query::<(&Collider, &Position, &Terrain)>();
-
-        if let Some((player_pos, player_rot)) = new {
+        if let Some(pos) = new_pos {
             let collisions = terrain
                 .iter()
-                .filter(|(_, (terrain_collider, terrain_pos, _))| {
+                .filter(|(_, (other, other_pos, _))| {
                     parry2d::query::intersection_test(
-                        &Isometry::translation(terrain_pos.0.x, terrain_pos.0.y),
-                        &terrain_collider.0,
-                        &Isometry::translation(player_pos.x, player_pos.y),
-                        &player_collider.0,
+                        &Isometry::translation(other_pos.0.x, other_pos.0.y),
+                        &other.0,
+                        &Isometry::translation(pos.x, pos.y),
+                        &collider.0,
                     )
                     .unwrap()
                 })
                 .count();
 
             if collisions == 0 {
-                pos.0 = player_pos;
-                rot.0 = player_rot
+                player_pos.0 = pos;
             }
         }
     }
