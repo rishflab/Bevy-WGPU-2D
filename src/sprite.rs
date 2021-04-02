@@ -27,11 +27,18 @@ impl AnimTimeline {
 
         Self(vec)
     }
-    pub fn current_frame(&self, strip: Range<usize>, length: f32, elapsed: f32) -> u8 {
-        let dt = elapsed % length;
+    /// elapsed = time since animation began (sec)
+    /// anim_duration = duration of one animation cycle (sec)
+    pub fn current_frame(&self, strip: Range<usize>, elapsed: f32) -> u8 {
+        let last_frame_index = strip.clone().last().unwrap();
+        let anim_duration = self.0.get(last_frame_index).unwrap().time;
+
+        // dt = how far into animation cycle (sec)
+        // so we can find what frame should be playing
+        let dt = elapsed % anim_duration;
         let mut frame = 0;
-        for f in self.0[strip].iter().rev() {
-            if dt > f.time {
+        for f in self.0[strip].iter() {
+            if dt < f.time {
                 frame = f.index;
                 break;
             }
