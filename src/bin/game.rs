@@ -33,11 +33,11 @@ impl PlayerState {
         match self {
             Self::Idle(start) => {
                 let dt = now - *start;
-                timeline.current_frame(0..8, 0.8, dt.as_secs_f32())
+                timeline.current_frame(0..8, dt.as_secs_f32())
             }
             Self::Run(start) => {
                 let dt = now - *start;
-                timeline.current_frame(8..16, 0.8, dt.as_secs_f32())
+                timeline.current_frame(8..16, dt.as_secs_f32())
             }
         }
     }
