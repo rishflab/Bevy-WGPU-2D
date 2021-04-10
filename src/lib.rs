@@ -63,6 +63,9 @@ impl<'a> Game<'a> {
         }
         self.build_scene()
     }
+    pub fn now(&self) -> Instant {
+        self.timer.now()
+    }
     pub fn spawn(&mut self, components: impl DynamicBundle) -> Entity {
         self.world.spawn(components)
     }
