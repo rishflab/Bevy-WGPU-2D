@@ -1,5 +1,3 @@
-#![feature(in_band_lifetimes)]
-
 use crate::asset::SpriteId;
 use crate::input::KeyState;
 use crate::sprite::Sprite;
@@ -54,13 +52,19 @@ impl<'a> Game<'a> {
     fn run(&mut self) -> Scene {
         self.timer.tick();
         for system in self.systems.iter() {
-            system(&self.world, Resources {
-                dt: self.timer.elapsed(),
-                now: self.timer.now(),
-                key_state: self.key_state,
-            })
+            system(
+                &self.world,
+                Resources {
+                    dt: self.timer.elapsed(),
+                    now: self.timer.now(),
+                    key_state: self.key_state,
+                },
+            )
         }
         self.build_scene()
+    }
+    pub fn now(&self) -> Instant {
+        self.timer.now()
     }
     pub fn spawn(&mut self, components: impl DynamicBundle) -> Entity {
         self.world.spawn(components)
