@@ -6,7 +6,8 @@ pub struct KeyState {
     pub right: bool,
     pub up: bool,
     pub down: bool,
-    pub last_pressed: Option<VirtualKeyCode>,
+    pub a: bool,
+    pub pressed_this_frame: Option<VirtualKeyCode>,
 }
 
 impl KeyState {
@@ -15,14 +16,19 @@ impl KeyState {
     }
 
     pub fn update(&mut self, input: KeyboardInput) {
-        self.last_pressed = input.virtual_keycode;
+        self.pressed_this_frame = None;
         match input {
             KeyboardInput {
                 state,
                 virtual_keycode: Some(VirtualKeyCode::Left),
                 ..
             } => match state {
-                ElementState::Pressed => self.left = true,
+                ElementState::Pressed => {
+                    if !self.left {
+                        self.pressed_this_frame = input.virtual_keycode;
+                    }
+                    self.left = true;
+                }
                 ElementState::Released => self.left = false,
             },
             KeyboardInput {
@@ -30,8 +36,26 @@ impl KeyState {
                 virtual_keycode: Some(VirtualKeyCode::Right),
                 ..
             } => match state {
-                ElementState::Pressed => self.right = true,
+                ElementState::Pressed => {
+                    if !self.right {
+                        self.pressed_this_frame = input.virtual_keycode;
+                    }
+                    self.right = true;
+                }
                 ElementState::Released => self.right = false,
+            },
+            KeyboardInput {
+                state,
+                virtual_keycode: Some(VirtualKeyCode::A),
+                ..
+            } => match state {
+                ElementState::Pressed => {
+                    if !self.a {
+                        self.pressed_this_frame = input.virtual_keycode;
+                    }
+                    self.a = true;
+                }
+                ElementState::Released => self.a = false,
             },
             _ => (),
         }
