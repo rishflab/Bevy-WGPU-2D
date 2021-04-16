@@ -18,6 +18,7 @@ pub mod app;
 pub mod asset;
 pub mod camera;
 pub mod input;
+pub mod player;
 mod renderer;
 pub mod sprite;
 mod time;

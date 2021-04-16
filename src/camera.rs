@@ -1,7 +1,10 @@
 use crate::app::WINDOW_SIZE;
+use crate::player::PlayerState;
 use crate::renderer::gpu_primitives::CameraUniform;
 use crate::renderer::sprite::PIXELS_PER_METRE;
+use crate::{Position, Resources};
 use glam::{Mat4, Vec3, Vec4};
+use hecs::World;
 
 pub struct ActiveCamera;
 
@@ -75,4 +78,14 @@ fn look_to_lh(eye: Vec3, dir: Vec3, up: Vec3) -> Mat4 {
         Vec4::new(sz, uz, fz, 0.0),
         Vec4::new(-s.dot(eye), -u.dot(eye), -f.dot(eye), 1.0),
     )
+}
+
+pub fn update_camera_position(world: &World, _res: Resources) {
+    if let Some((_, (_, pos))) = world.query::<(&PlayerState, &mut Position)>().iter().next() {
+        let mut q = world.query::<(&ActiveCamera, &mut ParallaxCamera)>();
+
+        if let Some((_, (_, camera))) = q.iter().next() {
+            camera.eye.x = pos.0.x;
+        }
+    }
 }
