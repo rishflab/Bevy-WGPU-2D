@@ -86,12 +86,7 @@ impl App {
         }
     }
 
-    pub fn run(
-        mut self,
-        event_loop: EventLoop<()>,
-        mut game: Game<'static>,
-        sprites: SpriteRegistry,
-    ) {
+    pub fn run(mut self, event_loop: EventLoop<()>, mut game: Game, sprites: SpriteRegistry) {
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             width: self.size.width,

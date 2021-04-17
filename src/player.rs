@@ -1,8 +1,13 @@
 use crate::input::KeyState;
 use crate::sprite::{AnimTimeline, Sprite};
-use crate::Resources;
+use crate::time::Timer;
+use crate::{Collider, MoveSpeed, Position, Rotation, Terrain, Velocity};
+use bevy_ecs::prelude::{Query, Res, Without};
 use glam::{Quat, Vec3};
-use hecs::World;
+use parry2d::math::Isometry;
+use parry2d::na::Vector2;
+use parry2d::query::TOIStatus;
+use std::cmp::Ordering;
 use std::time::Instant;
 use winit::event::VirtualKeyCode;
 
@@ -86,9 +91,7 @@ impl PlayerState {
             }
         }
     }
-}
 
-impl PlayerState {
     pub fn animation_state(&self, now: Instant, timeline: &AnimTimeline) -> u8 {
         match self {
             Self::Standing(start) => {
@@ -107,11 +110,84 @@ impl PlayerState {
     }
 }
 
-pub fn get_input_from_keystate(world: &World, res: Resources) {
-    let mut q = world.query::<&mut PlayerInput>();
+pub fn update_player_state_machine(
+    mut query: Query<(
+        &mut PlayerState,
+        &PlayerInput,
+        &mut Velocity,
+        &mut Rotation,
+        &MoveSpeed,
+    )>,
+    timer: Res<Timer>,
+) {
+    for (mut state, input, mut vel, mut rot, speed) in query.iter_mut() {
+        let (new_state, new_vel) = state.handle_player_input(
+            Vec3::new(speed.0, 0.0, 0.0),
+            &mut rot.0,
+            &input,
+            timer.now(),
+        );
 
-    for (_, command) in q.iter() {
-        let next = match res.key_state {
+        vel.0 = new_vel;
+        *state = new_state;
+    }
+}
+
+pub fn move_players(
+    terrain: Query<(&Collider, &Position, &Terrain)>,
+    mut players: Query<(&Collider, &mut Position, &Velocity, Without<Terrain>)>,
+    timer: Res<Timer>,
+) {
+    let thresh = 0.001;
+    let max_toi = timer.elapsed().as_secs_f32();
+
+    for (player_collider, mut pos, vel, _) in players.iter_mut() {
+        let collision = terrain
+            .iter()
+            .filter_map(|(terrain_collider, terrain_pos, _)| {
+                parry2d::query::time_of_impact(
+                    &Isometry::translation(terrain_pos.0.x, terrain_pos.0.y),
+                    &Vector2::new(0.0, 0.0),
+                    &terrain_collider.0,
+                    &Isometry::translation(pos.0.x, pos.0.y),
+                    &Vector2::new(vel.0.x, vel.0.y),
+                    &player_collider.0,
+                    max_toi,
+                    thresh,
+                )
+                .unwrap()
+            })
+            .min_by(|x, y| {
+                // min_by() finds the smallest item in an iterator based on a comparison function.
+                // We go through the iterator comparing an item with another.
+                // If the item is smaller than the one it is being compared to we keep it and discard the larger item.
+                // Eventually only the smalled item remains
+                // Below we are comparing the toi, the time-of-impact of the collision.
+                // We want to find the collision that happened first ie. had the smallest toi.
+                if x.toi > y.toi {
+                    Ordering::Less
+                } else if x.toi < y.toi {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
+                }
+            });
+
+        if let Some(toi) = collision {
+            // TOIStatus has a TOIStatus::Penetrating variant.
+            // We do not want to move the player if the player collider is already penetrating terrain.
+            if let TOIStatus::Converged = toi.status {
+                pos.0 += vel.0 * toi.toi;
+            }
+        } else {
+            pos.0 += vel.0 * max_toi;
+        }
+    }
+}
+
+pub fn get_input_from_keystate(mut query: Query<&mut PlayerInput>, key_state: Res<KeyState>) {
+    for mut command in query.iter_mut() {
+        let next = match *key_state {
             KeyState {
                 pressed_this_frame: Some(VirtualKeyCode::A),
                 ..
@@ -137,10 +213,11 @@ pub fn get_input_from_keystate(world: &World, res: Resources) {
     }
 }
 
-pub fn update_animation_state(world: &World, res: Resources) {
-    let mut q = world.query::<(&PlayerState, &mut Sprite, &AnimTimeline)>();
-
-    for (_, (state, sprite, timeline)) in q.iter() {
-        sprite.offset = state.animation_state(res.now, timeline);
+pub fn update_animation_state(
+    mut query: Query<(&PlayerState, &mut Sprite, &AnimTimeline)>,
+    timer: Res<Timer>,
+) {
+    for (state, mut sprite, timeline) in query.iter_mut() {
+        sprite.offset = state.animation_state(timer.now(), timeline);
     }
 }
