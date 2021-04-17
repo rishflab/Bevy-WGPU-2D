@@ -161,7 +161,7 @@ pub fn move_players(
                 // min_by() finds the smallest item in an iterator based on a comparison function.
                 // We go through the iterator comparing an item with another.
                 // If the item is smaller than the one it is being compared to we keep it and discard the larger item.
-                // Eventually only the smalled item remains
+                // Eventually only the smallest item remains
                 // Below we are comparing the toi, the time-of-impact of the collision.
                 // We want to find the collision that happened first ie. had the smallest toi.
                 if x.toi > y.toi {
