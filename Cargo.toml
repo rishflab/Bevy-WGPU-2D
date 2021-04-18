@@ -26,3 +26,6 @@ shaderc = "0.7"
 
 [features]
 sprite-debug = []
+
+[profile.dev]
+split-debuginfo = "unpacked"
