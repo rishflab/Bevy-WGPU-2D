@@ -1,5 +1,3 @@
-use crate::TEXTURE_ARRAY_SIZE;
-use arrayvec::ArrayVec;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -38,7 +36,7 @@ impl Sprite {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct AnimTimeline(pub Vec<ArrayVec<KeyFrame, TEXTURE_ARRAY_SIZE>>);
+pub struct AnimTimeline(pub Vec<Vec<KeyFrame>>);
 
 impl AnimTimeline {
     /// elapsed = time since animation began (sec)
