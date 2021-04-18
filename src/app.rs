@@ -134,6 +134,7 @@ impl App {
                     };
 
                     let scene = game.run();
+                    game.clear_pressed_with_frame();
 
                     renderer.render(&frame.output, &self.device, &self.queue, &sc_desc, scene);
                 }

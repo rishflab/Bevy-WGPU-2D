@@ -84,6 +84,13 @@ impl Game {
         }
     }
 
+    fn clear_pressed_with_frame(&mut self) {
+        self.world
+            .get_resource_mut::<KeyState>()
+            .unwrap()
+            .pressed_this_frame = None;
+    }
+
     fn build_scene(&mut self) -> Scene {
         let mut sprites: Vec<(SpriteId, InstanceRaw)> = vec![];
 
