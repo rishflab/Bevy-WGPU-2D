@@ -1,7 +1,7 @@
 #![allow(clippy::single_match)]
 extern crate erlking;
 
-use erlking::asset::{load_anim_timeline, SpriteId, SpriteRegistry, View};
+use erlking::asset::{SpriteId, SpriteRegistry};
 use erlking::input::KeyState;
 use erlking::sprite::{AnimTimeline, Sprite};
 use erlking::{
@@ -40,7 +40,7 @@ impl PlayerState {
         input: &PlayerInput,
         now: Instant,
     ) -> (Self, Vec3) {
-        let attack_duration = 0.6;
+        let attack_duration = 0.45;
         match (self, input) {
             (Self::Standing(..), PlayerInput::Left) => {
                 *rot = Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 180.0_f32.to_radians());
@@ -112,15 +112,15 @@ impl PlayerState {
         match self {
             Self::Standing(start) => {
                 let dt = now - *start;
-                timeline.current_frame(0..8, dt.as_secs_f32())
+                timeline.current_frame(0, dt.as_secs_f32())
             }
             Self::Running(start) => {
                 let dt = now - *start;
-                timeline.current_frame(8..16, dt.as_secs_f32())
+                timeline.current_frame(1, dt.as_secs_f32())
             }
             Self::Attacking(start) => {
                 let dt = now - *start;
-                timeline.current_frame(16..22, dt.as_secs_f32())
+                timeline.current_frame(2, dt.as_secs_f32())
             }
         }
     }
@@ -133,20 +133,6 @@ fn main() {
 
     let mut sprite_registry = SpriteRegistry::new();
 
-    let player_sprite = sprite_registry.insert(SpriteData::load_from_anim_strips(
-        "player",
-        vec![
-            "assets/huntress/idle.png",
-            "assets/huntress/run.png",
-            "assets/huntress/attack2.png",
-        ],
-        View {
-            x: 55,
-            y: 53,
-            width: 40,
-            height: 50,
-        },
-    ));
     let apple_sprite = sprite_registry.insert(SpriteData::load("apple", vec!["assets/apple.png"]));
     let ashberry_sprite =
         sprite_registry.insert(SpriteData::load("ashberry", vec!["assets/ashberry.png"]));
@@ -158,7 +144,10 @@ fn main() {
         vec!["assets/dark_block.png"],
     ));
 
-    let anim_timeline = load_anim_timeline("assets/huntress/keyframes.json");
+    let (anim_timeline, player_sprite_data) =
+        SpriteData::load_from_json("player", "assets/huntress/animated_sprite.json");
+
+    let player_sprite = sprite_registry.insert(player_sprite_data);
 
     let movespeed = MoveSpeed(10.0);
 
@@ -316,7 +305,7 @@ fn update_animation_state(world: &World, res: Resources) {
     let mut q = world.query::<(&PlayerState, &mut Sprite, &AnimTimeline)>();
 
     for (_, (state, sprite, timeline)) in q.iter() {
-        sprite.frame_id = state.animation_state(res.now, timeline);
+        sprite.offset = state.animation_state(res.now, timeline);
     }
 }
 
