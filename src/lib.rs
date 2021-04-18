@@ -27,6 +27,7 @@ pub mod sprite;
 mod time;
 
 pub struct Position(pub Vec3);
+#[derive(PartialOrd, PartialEq)]
 pub struct Velocity(pub Vec3);
 pub struct Rotation(pub Quat);
 pub struct Scale(pub u8);

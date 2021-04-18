@@ -5,8 +5,8 @@ use bevy_ecs::prelude::IntoSystem;
 use erlking::asset::{SpriteId, SpriteRegistry};
 use erlking::camera::update_camera_position;
 use erlking::player::{
-    get_input_from_keystate, move_players, update_animation_state, update_player_state_machine,
-    PlayerInput, PlayerState,
+    flip_sprite, get_input_from_keystate, move_players, update_animation_state,
+    update_player_state_machine, PlayerInput, PlayerState,
 };
 use erlking::sprite::Sprite;
 use erlking::{
@@ -119,6 +119,7 @@ fn main() {
     parallax_demo.add_system(update_player_state_machine.system());
     parallax_demo.add_system(update_camera_position.system());
     parallax_demo.add_system(update_animation_state.system());
+    parallax_demo.add_system(flip_sprite.system());
     parallax_demo.add_system(move_players.system());
 
     app.run(event_loop, parallax_demo, sprite_registry);
