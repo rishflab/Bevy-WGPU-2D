@@ -20,8 +20,21 @@ pub struct View {
 
 #[derive(Clone, Copy)]
 pub struct Sprite {
-    pub registry_idx: usize,
-    pub offset: u8,
+    id: usize,
+    pub anim_frame_index: u8,
+}
+
+impl Sprite {
+    pub fn new(id: usize) -> Self {
+        Self {
+            id,
+            anim_frame_index: 0,
+        }
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -54,14 +67,5 @@ impl AnimTimeline {
         let start = self.0[0..anim_id as usize].iter().flatten().count();
 
         (frame + start) as u8
-    }
-}
-
-impl Sprite {
-    pub fn new(start: usize) -> Self {
-        Self {
-            registry_idx: start,
-            offset: 0,
-        }
     }
 }

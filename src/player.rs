@@ -201,7 +201,7 @@ pub fn update_animation_state(
     timer: Res<Timer>,
 ) {
     for (state, mut sprite, timeline) in query.iter_mut() {
-        sprite.offset = state.animation_state(timer.now(), timeline);
+        sprite.anim_frame_index = state.animation_state(timer.now(), timeline);
     }
 }
 
