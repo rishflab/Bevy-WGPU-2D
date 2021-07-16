@@ -214,5 +214,27 @@
             "height":50
          }
       }
+   ],
+   [
+      {
+         "png":"assets/huntress/fall.png",
+         "time":0.1,
+         "view":{
+            "x":55,
+            "y":53,
+            "width":40,
+            "height":50
+         }
+      },
+      {
+         "png":"assets/huntress/fall.png",
+         "time":0.2,
+         "view":{
+            "x":205,
+            "y":53,
+            "width":40,
+            "height":50
+         }
+      }
    ]
 ]

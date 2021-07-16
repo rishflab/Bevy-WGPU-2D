@@ -6,7 +6,7 @@ use erlking::asset::{SpriteId, SpriteRegistry};
 use erlking::camera::update_camera_position;
 use erlking::player::{
     flip_sprite, get_input_from_keystate, move_players, update_animation_state,
-    update_player_state_machine, PlayerInput, PlayerState,
+    update_player_state_machine_for_input, PlayerInput, PlayerState,
 };
 use erlking::sprite::Sprite;
 use erlking::{
@@ -116,7 +116,7 @@ fn main() {
     game.spawn_batch(floor(dark_block_sprite));
 
     game.add_system(get_input_from_keystate.system());
-    game.add_system(update_player_state_machine.system());
+    game.add_system(update_player_state_machine_for_input.system());
     game.add_system(update_camera_position.system());
     game.add_system(update_animation_state.system());
     game.add_system(flip_sprite.system());

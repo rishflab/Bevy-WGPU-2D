@@ -16,6 +16,7 @@ pub enum PlayerState {
     Standing(Instant),
     Running(Instant),
     Attacking(Instant),
+    Falling(Instant),
 }
 
 pub enum PlayerInput {
@@ -73,6 +74,22 @@ impl PlayerState {
                     (PlayerState::Attacking(start), Vec3::zero())
                 }
             }
+            (Self::Falling(start), PlayerInput::Left) => (
+                PlayerState::Falling(start),
+                Vec3::new(-1.0, 0.0, 0.0) * vel + Vec3::new(0.0, -1.0 * vel.x, 0.0),
+            ),
+            (Self::Falling(start), PlayerInput::Right) => (
+                PlayerState::Falling(start),
+                Vec3::new(1.0, 0.0, 0.0) * vel + Vec3::new(0.0, -1.0 * vel.x, 0.0),
+            ),
+            (Self::Falling(start), PlayerInput::None) => (
+                PlayerState::Falling(start),
+                Vec3::new(0.0, -1.0 * vel.x, 0.0),
+            ),
+            (Self::Falling(start), PlayerInput::Attack) => (
+                PlayerState::Falling(start),
+                Vec3::new(0.0, -1.0 * vel.x, 0.0),
+            ),
         }
     }
 
@@ -90,12 +107,29 @@ impl PlayerState {
                 let dt = now - *start;
                 timeline.current_frame(2, dt.as_secs_f32())
             }
+            Self::Falling(start) => {
+                let dt = now - *start;
+                timeline.current_frame(3, dt.as_secs_f32())
+            }
         }
     }
 }
 
-pub fn update_player_state_machine(
+pub fn update_player_state_machine_for_input(
     mut query: Query<(&mut PlayerState, &PlayerInput, &mut Velocity, &MoveSpeed)>,
+    timer: Res<Timer>,
+) {
+    for (mut state, input, mut vel, speed) in query.iter_mut() {
+        let (new_state, new_vel) =
+            state.handle_player_input(Vec3::new(speed.0, 0.0, 0.0), &input, timer.now());
+
+        vel.0 = new_vel;
+        *state = new_state;
+    }
+}
+
+pub fn update_player_state_machine_for_events(
+    mut query: Query<(&mut PlayerState, &IS, &mut Velocity, &MoveSpeed)>,
     timer: Res<Timer>,
 ) {
     for (mut state, input, mut vel, speed) in query.iter_mut() {
@@ -214,5 +248,32 @@ pub fn flip_sprite(mut query: Query<(Changed<Velocity>, &Velocity, &mut Rotation
                 rot.0 = Quat::from_axis_angle(Vec3::new(0.0, 1.0, 0.0), 180.0_f32.to_radians());
             }
         }
+    }
+}
+
+pub struct GroundSensor {
+    pub shape: parry2d::shape::Cuboid,
+    pub grounded: bool,
+}
+
+pub fn check_if_grounded(
+    mut ground_sensor: Query<(&mut GroundSensor, &Position, &PlayerState, Without<Terrain>)>,
+    terrain: Query<(&Collider, &Position, &Terrain)>,
+) {
+    for (sensor, pos, _, _) in ground_sensor.iter_mut() {
+        for (terrain_collider, terrain_pos, _) in terrain.iter() {
+            if parry2d::query::intersection_test(
+                &Isometry::translation(terrain_pos.0.x, terrain_pos.0.y),
+                &terrain_collider.0,
+                &Isometry::translation(pos.0.x, pos.0.y),
+                &sensor.0,
+            )
+            .unwrap()
+            {
+                sensor.grounded == true;
+                break;
+            }
+        }
+        sensor.grounded == false;
     }
 }
