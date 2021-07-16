@@ -1,5 +1,3 @@
-use crate::TEXTURE_ARRAY_SIZE;
-use arrayvec::ArrayVec;
 use serde::Deserialize;
 use std::path::PathBuf;
 
@@ -20,12 +18,25 @@ pub struct View {
 
 #[derive(Clone, Copy)]
 pub struct Sprite {
-    pub registry_idx: usize,
-    pub offset: u8,
+    id: usize,
+    pub anim_frame_index: u8,
+}
+
+impl Sprite {
+    pub fn new(id: usize) -> Self {
+        Self {
+            id,
+            anim_frame_index: 0,
+        }
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct AnimTimeline(pub Vec<ArrayVec<KeyFrame, TEXTURE_ARRAY_SIZE>>);
+pub struct AnimTimeline(pub Vec<Vec<KeyFrame>>);
 
 impl AnimTimeline {
     /// elapsed = time since animation began (sec)
@@ -54,14 +65,5 @@ impl AnimTimeline {
         let start = self.0[0..anim_id as usize].iter().flatten().count();
 
         (frame + start) as u8
-    }
-}
-
-impl Sprite {
-    pub fn new(start: usize) -> Self {
-        Self {
-            registry_idx: start,
-            offset: 0,
-        }
     }
 }

@@ -22,7 +22,7 @@ use winit::event_loop::EventLoop;
 
 fn main() {
     let event_loop = EventLoop::new();
-    let app = futures::executor::block_on(App::new("parallax-demo", &event_loop));
+    let app = futures::executor::block_on(App::new("erlking", &event_loop));
 
     let mut sprite_registry = SpriteRegistry::new();
 
@@ -55,7 +55,7 @@ fn main() {
         ActiveCamera,
     );
 
-    let mut parallax_demo = Game::new();
+    let mut game = Game::new();
 
     let player = (
         Position(Vec3::new(0.0, 0.2, 20.0)),
@@ -106,23 +106,23 @@ fn main() {
         Terrain,
     );
 
-    parallax_demo.spawn(player);
-    parallax_demo.spawn(apple);
-    parallax_demo.spawn(ashberry);
-    parallax_demo.spawn(baobab);
-    parallax_demo.spawn(beech);
-    parallax_demo.spawn(camera);
+    game.spawn(player);
+    game.spawn(apple);
+    game.spawn(ashberry);
+    game.spawn(baobab);
+    game.spawn(beech);
+    game.spawn(camera);
 
-    parallax_demo.spawn_batch(floor(dark_block_sprite));
+    game.spawn_batch(floor(dark_block_sprite));
 
-    parallax_demo.add_system(get_input_from_keystate.system());
-    parallax_demo.add_system(update_player_state_machine.system());
-    parallax_demo.add_system(update_camera_position.system());
-    parallax_demo.add_system(update_animation_state.system());
-    parallax_demo.add_system(flip_sprite.system());
-    parallax_demo.add_system(move_players.system());
+    game.add_system(get_input_from_keystate.system());
+    game.add_system(update_player_state_machine.system());
+    game.add_system(update_camera_position.system());
+    game.add_system(update_animation_state.system());
+    game.add_system(flip_sprite.system());
+    game.add_system(move_players.system());
 
-    app.run(event_loop, parallax_demo, sprite_registry);
+    app.run(event_loop, game, sprite_registry);
 }
 
 fn floor(sprite_id: SpriteId) -> Vec<(Position, Rotation, Scale, Sprite, Collider, Terrain)> {

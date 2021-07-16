@@ -112,22 +112,31 @@ pub fn move_players(
     mut players: Query<(&Collider, &mut Position, &Velocity, Without<Terrain>)>,
     timer: Res<Timer>,
 ) {
-    let thresh = 0.001;
     let max_toi = timer.elapsed().as_secs_f32();
+    let threshold = 0.00001;
 
     for (player_collider, mut pos, vel, _) in players.iter_mut() {
         let collision = terrain
             .iter()
             .filter_map(|(terrain_collider, terrain_pos, _)| {
+                // If we query against the actually location of the terrain, the player collider
+                // will penetrate the terrain collider.
+                // Once the player has penetrated the terrain collider it will forever be stuck as
+                // subsequent toi queries will always return penetration prevent further movement.
+                // This can be resolved by querying against a virtual terrain collider that has been
+                // shifted closer to the player rather than the actual terrain collider.
+                let virtual_pos1 = Isometry::translation(
+                    terrain_pos.0.x - threshold * vel.0.x,
+                    terrain_pos.0.y - threshold * vel.0.y,
+                );
                 parry2d::query::time_of_impact(
-                    &Isometry::translation(terrain_pos.0.x, terrain_pos.0.y),
+                    &virtual_pos1,
                     &Vector2::new(0.0, 0.0),
                     &terrain_collider.0,
                     &Isometry::translation(pos.0.x, pos.0.y),
                     &Vector2::new(vel.0.x, vel.0.y),
                     &player_collider.0,
                     max_toi,
-                    thresh,
                 )
                 .unwrap()
             })
@@ -192,7 +201,7 @@ pub fn update_animation_state(
     timer: Res<Timer>,
 ) {
     for (state, mut sprite, timeline) in query.iter_mut() {
-        sprite.offset = state.animation_state(timer.now(), timeline);
+        sprite.anim_frame_index = state.animation_state(timer.now(), timeline);
     }
 }
 

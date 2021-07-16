@@ -103,9 +103,9 @@ impl Game {
                 position: pos.0,
                 rotation: rot.0,
                 scale: Vec3::splat(scale.0 as f32),
-                frame_id: sprite.offset,
+                frame_id: sprite.anim_frame_index,
             });
-            sprites.push((sprite.registry_idx, instance_raw))
+            sprites.push((sprite.id(), instance_raw))
         }
 
         let mut colliders: Vec<InstanceRaw> = vec![];
